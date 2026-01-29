@@ -57,7 +57,7 @@ export default function Dashboard() {
       <motion.div variants={itemVariants} className="flex items-start justify-between">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
-            Bonjour, Jean 👋
+            Bonjour, Sirine 👋
           </h1>
           <p className="text-muted-foreground">
             Continue ta progression, tu as 3 objectifs en cours.
