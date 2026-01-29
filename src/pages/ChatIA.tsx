@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, User, Paperclip, Mic, MoreHorizontal, Copy, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Send, Sparkles, User, Paperclip, Mic, MoreHorizontal, Copy, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: string;
@@ -32,6 +36,8 @@ export default function ChatIA() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,35 +58,67 @@ export default function ChatIA() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    // Check if user is authenticated
+    if (!user) {
+      // Guest mode - simulate response
+      setTimeout(() => {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `🔒 **Mode invité**\n\nPour accéder aux fonctionnalités IA complètes, veuillez vous connecter ou créer un compte.\n\nEn attendant, voici une réponse de démonstration pour votre question sur "${currentInput.slice(0, 30)}..."`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        setIsTyping(false);
+      }, 1000);
+      return;
+    }
+
+    try {
+      // Prepare messages for API (excluding the initial greeting)
+      const apiMessages = messages
+        .filter((m) => m.id !== "1")
+        .map((m) => ({ role: m.role, content: m.content }));
+      
+      apiMessages.push({ role: "user", content: currentInput });
+
+      const { data, error } = await supabase.functions.invoke("chat-ai", {
+        body: { messages: apiMessages },
+      });
+
+      if (error) {
+        throw error;
+      }
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `J'ai bien compris ta question sur "${input.slice(0, 50)}...". 
-
-Voici une explication détaillée :
-
-**Concept principal**
-Le sujet que tu mentionnes est fondamental pour comprendre les bases. Commençons par les éléments essentiels.
-
-**Points clés à retenir :**
-1. Premier point important à mémoriser
-2. Deuxième élément crucial
-3. Troisième aspect à ne pas négliger
-
-**Exemple pratique**
-Prenons un cas concret pour illustrer...
-
-As-tu des questions supplémentaires sur ce sujet ?`,
+        content: data.message,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error calling chat-ai:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de contacter l'assistant IA. Réessayez.",
+        variant: "destructive",
+      });
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Désolé, une erreur s'est produite. Veuillez réessayer. 🙁",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -95,6 +133,14 @@ As-tu des questions supplémentaires sur ce sujet ?`,
     inputRef.current?.focus();
   };
 
+  const copyToClipboard = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast({
+      title: "Copié !",
+      description: "Le message a été copié dans le presse-papiers.",
+    });
+  };
+
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       {/* Header */}
@@ -105,7 +151,9 @@ As-tu des questions supplémentaires sur ce sujet ?`,
           </div>
           <div>
             <h1 className="font-display font-semibold">Chat IA Pédagogique</h1>
-            <p className="text-xs text-muted-foreground">Toujours prêt à t'aider</p>
+            <p className="text-xs text-muted-foreground">
+              {user ? "Propulsé par l'IA" : "Mode démo (connectez-vous pour l'accès complet)"}
+            </p>
           </div>
         </div>
         <button className="p-2 rounded-xl hover:bg-secondary transition-colors">
@@ -142,11 +190,20 @@ As-tu des questions supplémentaires sur ce sujet ?`,
                       : "prago-chat-bubble-ai"
                   )}
                 >
-                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                  {message.role === "assistant" ? (
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                  )}
                 </div>
-                {message.role === "assistant" && (
+                {message.role === "assistant" && message.id !== "1" && (
                   <div className="flex items-center gap-2 mt-2 ml-1">
-                    <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+                    <button 
+                      onClick={() => copyToClipboard(message.content)}
+                      className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                    >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
                     <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
@@ -178,10 +235,9 @@ As-tu des questions supplémentaires sur ce sujet ?`,
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div className="prago-chat-bubble-ai">
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-subtle" />
-                <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-subtle" style={{ animationDelay: "0.2s" }} />
-                <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse-subtle" style={{ animationDelay: "0.4s" }} />
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">En train de réfléchir...</span>
               </div>
             </div>
           </motion.div>
@@ -221,7 +277,8 @@ As-tu des questions supplémentaires sur ce sujet ?`,
             onKeyDown={handleKeyDown}
             placeholder="Pose ta question..."
             rows={1}
-            className="flex-1 bg-transparent border-0 resize-none text-sm placeholder:text-muted-foreground focus:outline-none py-2.5 max-h-32"
+            disabled={isTyping}
+            className="flex-1 bg-transparent border-0 resize-none text-sm placeholder:text-muted-foreground focus:outline-none py-2.5 max-h-32 disabled:opacity-50"
             style={{ minHeight: "44px" }}
           />
           <button className="p-2.5 rounded-xl hover:bg-secondary transition-colors text-muted-foreground">
@@ -229,10 +286,10 @@ As-tu des questions supplémentaires sur ce sujet ?`,
           </button>
           <button
             onClick={handleSend}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isTyping}
             className={cn(
               "p-2.5 rounded-xl transition-all",
-              input.trim()
+              input.trim() && !isTyping
                 ? "prago-gradient-bg text-white hover:opacity-90"
                 : "bg-secondary text-muted-foreground"
             )}
