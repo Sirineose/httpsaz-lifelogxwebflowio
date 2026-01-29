@@ -33,7 +33,7 @@ export default function Profile() {
       <div className="prago-card p-6 md:p-8 mb-6">
         <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-2xl prago-gradient-bg flex items-center justify-center text-3xl font-bold text-white">
+            <div className="w-24 h-24 rounded-2xl prago-gradient-bg flex items-center justify-center text-3xl font-bold text-white shadow-prago-lg prago-glow">
               JD
             </div>
             <button className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-secondary transition-colors">

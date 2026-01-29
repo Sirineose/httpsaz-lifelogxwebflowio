@@ -1,27 +1,49 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Play, Sparkles, BookOpen, Brain, Zap, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Play, Sparkles, BookOpen, Brain, Zap, CheckCircle2, Shield, GraduationCap, MessageSquare, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
   {
-    icon: Brain,
-    title: "Chat IA Pédagogique",
-    description: "Pose tes questions et obtiens des explications adaptées à ton niveau.",
+    icon: GraduationCap,
+    title: "Pédagogique",
+    description: "Explications claires et structurées, adaptées à votre niveau d'apprentissage avec des exemples concrets.",
+    emoji: "🎓",
   },
   {
-    icon: Sparkles,
-    title: "Snap & Solve",
-    description: "Prends une photo d'un exercice et obtiens la solution détaillée.",
+    icon: Brain,
+    title: "Intelligent",
+    description: "Détection des erreurs de raisonnement et suggestions d'amélioration personnalisées.",
+    emoji: "🧠",
   },
   {
     icon: BookOpen,
-    title: "Cours en BD",
-    description: "Apprends des concepts complexes grâce à des bandes dessinées éducatives.",
+    title: "Méthodique",
+    description: "Propose des méthodes de travail et des stratégies d'apprentissage efficaces.",
+    emoji: "📚",
   },
   {
-    icon: Zap,
-    title: "Quiz Adaptatifs",
-    description: "Des quiz qui s'adaptent à ton niveau pour une progression optimale.",
+    icon: Shield,
+    title: "Sécurisé",
+    description: "Vos données sont protégées. Aucune clé API côté client, conformité totale.",
+    emoji: "🔒",
+  },
+];
+
+const steps = [
+  {
+    number: "1",
+    title: "Posez votre question",
+    description: "Dans le chat ou en analysant une photo, posez votre question académique de manière naturelle.",
+  },
+  {
+    number: "2",
+    title: "PRAGO analyse",
+    description: "Notre IA analyse votre demande et prépare une réponse pédagogique structurée adaptée à votre niveau.",
+  },
+  {
+    number: "3",
+    title: "Apprenez efficacement",
+    description: "Recevez des explications claires, des méthodes et des vérifications pour progresser rapidement.",
   },
 ];
 
@@ -38,15 +60,18 @@ export default function Landing() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl prago-gradient-bg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center shadow-prago">
+              <span className="text-white font-bold text-lg">P</span>
             </div>
-            <span className="font-display font-bold text-xl">PRAGO</span>
+            <span className="font-display font-bold text-xl tracking-tight">PRAGO</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Fonctionnalités
+            </a>
+            <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Comment ça marche
             </a>
             <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Tarifs
@@ -60,94 +85,96 @@ export default function Landing() {
               Connexion
             </Link>
             <Link to="/dashboard" className="prago-btn-primary text-sm py-2 hidden sm:flex">
-              Commencer gratuitement
+              Commencer
             </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 lg:pt-40 lg:pb-32 relative">
-        {/* Background gradient */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/20 rounded-full blur-[120px] opacity-50" />
+      <section className="pt-32 pb-20 lg:pt-40 lg:pb-32 relative" style={{ background: "var(--prago-gradient-hero)" }}>
+        {/* Background decorations */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-40 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
+            {/* Logo Icon */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
+              className="mb-8"
             >
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                <Sparkles className="w-4 h-4" />
-                Propulsé par l'Intelligence Artificielle
-              </span>
+              <div className="w-24 h-24 rounded-3xl prago-gradient-bg flex items-center justify-center mx-auto shadow-prago-lg prago-glow">
+                <span className="text-white font-bold text-4xl">P</span>
+              </div>
             </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="font-display text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+              className="font-display text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
             >
-              Apprends plus vite,
-              <br />
-              <span className="prago-gradient-text">plus efficacement</span>
+              <span className="prago-gradient-text">PRAGO</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
+              className="text-xl md:text-2xl text-foreground font-medium mb-4"
             >
-              PRAGO est ta plateforme d'apprentissage personnalisée. L'IA comprend tes besoins et t'accompagne vers la réussite.
+              Votre mentor académique IA exigeant, pédagogique et structuré
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10"
+            >
+              PRAGO n'est pas un simple chat. C'est un assistant éducatif qui vous guide pas à pas, adapte son niveau à vos besoins et vous aide à développer votre raisonnement.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <Link
-                to="/dashboard"
-                className="prago-btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
+                to="/chat"
+                className="prago-btn-primary flex items-center gap-3 w-full sm:w-auto justify-center text-base px-8 py-4"
               >
-                Démarrer gratuitement
-                <ArrowRight className="w-4 h-4" />
+                <MessageSquare className="w-5 h-5" />
+                Commencer à discuter
               </Link>
-              <a
-                href="#demo"
-                className="prago-btn-secondary flex items-center gap-2 w-full sm:w-auto justify-center"
+              <Link
+                to="/snap-solve"
+                className="prago-btn-secondary flex items-center gap-3 w-full sm:w-auto justify-center text-base px-8 py-4"
               >
-                <Play className="w-4 h-4" />
-                Voir la démo
-              </a>
-            </motion.div>
-
-            {/* Benefits */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex flex-wrap items-center justify-center gap-4 mt-10"
-            >
-              {benefits.map((benefit) => (
-                <div key={benefit} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-success" />
-                  {benefit}
-                </div>
-              ))}
+                <Camera className="w-5 h-5" />
+                Snap & Solve
+              </Link>
+              <Link
+                to="/exam-prep"
+                className="prago-btn-ghost flex items-center gap-3 w-full sm:w-auto justify-center text-base px-8 py-4 border border-border"
+              >
+                <GraduationCap className="w-5 h-5" />
+                Préparation Examens
+              </Link>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 lg:py-32 bg-secondary/30">
+      <section id="features" className="py-20 lg:py-32">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <motion.h2
@@ -156,16 +183,16 @@ export default function Landing() {
               viewport={{ once: true }}
               className="font-display text-3xl md:text-4xl font-bold mb-4"
             >
-              Tout ce dont tu as besoin pour réussir
+              Pourquoi choisir <span className="prago-gradient-text">PRAGO</span> ?
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-muted-foreground max-w-xl mx-auto"
+              className="text-muted-foreground text-lg max-w-xl mx-auto"
             >
-              Des outils intelligents conçus pour optimiser ton apprentissage et te faire gagner du temps.
+              Des fonctionnalités conçues pour votre réussite académique
             </motion.p>
           </div>
 
@@ -177,108 +204,114 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="prago-card prago-card-hover p-6"
+                className="prago-card prago-card-hover p-6 text-center"
               >
-                <div className="w-12 h-12 rounded-xl prago-gradient-bg flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-display font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
+                <div className="text-4xl mb-4">{feature.emoji}</div>
+                <h3 className="font-display font-semibold text-lg mb-3">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Video Demo */}
-      <section id="demo" className="py-20 lg:py-32">
+      {/* How it works */}
+      <section id="how-it-works" className="py-20 lg:py-32 bg-secondary/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="font-display text-3xl md:text-4xl font-bold mb-4"
-              >
-                Découvre PRAGO en action
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="text-muted-foreground"
-              >
-                Une démonstration de notre plateforme d'apprentissage IA
-              </motion.p>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="relative aspect-video rounded-2xl overflow-hidden prago-gradient-border"
+              className="font-display text-3xl md:text-4xl font-bold mb-4"
             >
-              <div className="absolute inset-[1px] rounded-2xl bg-card flex items-center justify-center">
-                <div className="text-center">
-                  <button className="w-20 h-20 rounded-full prago-gradient-bg flex items-center justify-center mx-auto mb-4 hover:scale-105 transition-transform shadow-prago-lg">
-                    <Play className="w-8 h-8 text-white ml-1" />
-                  </button>
-                  <p className="text-muted-foreground text-sm">Cliquer pour lancer la vidéo</p>
+              Comment ça fonctionne ?
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-muted-foreground text-lg"
+            >
+              En 3 étapes simples
+            </motion.p>
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-6">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.15 }}
+                className="prago-card p-6 flex items-start gap-5"
+              >
+                <div className="w-12 h-12 rounded-2xl prago-gradient-bg flex items-center justify-center flex-shrink-0 shadow-prago">
+                  <span className="text-white font-bold text-xl">{step.number}</span>
                 </div>
-              </div>
-            </motion.div>
+                <div>
+                  <h3 className="font-display font-semibold text-lg mb-2">{step.title}</h3>
+                  <p className="text-muted-foreground">{step.description}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 lg:py-32 bg-secondary/30">
-        <div className="container mx-auto px-4">
+      <section className="py-20 lg:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 prago-gradient-bg opacity-5" />
+        <div className="container mx-auto px-4 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="max-w-3xl mx-auto text-center"
           >
+            <div className="text-5xl mb-6">🚀</div>
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              Prêt à transformer ton apprentissage ?
+              Prêt à commencer votre apprentissage ?
             </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Rejoins des milliers d'étudiants qui utilisent déjà PRAGO pour réussir leurs études.
+            <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
+              Rejoignez PRAGO et bénéficiez d'un mentor académique IA à votre service 24/7
             </p>
             <Link
-              to="/dashboard"
-              className="prago-btn-primary inline-flex items-center gap-2"
+              to="/chat"
+              className="prago-btn-primary inline-flex items-center gap-2 text-lg px-8 py-4"
             >
-              Commencer gratuitement
-              <ArrowRight className="w-4 h-4" />
+              Essayer maintenant
+              <ArrowRight className="w-5 h-5" />
             </Link>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 border-t border-border">
+      <footer className="py-10 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg prago-gradient-bg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl prago-gradient-bg flex items-center justify-center">
+                <span className="text-white font-bold">P</span>
               </div>
               <span className="font-display font-semibold">PRAGO</span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-8">
               <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Tarifs
               </Link>
               <Link to="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                FAQ
+                FAQ & Sécurité
+              </Link>
+              <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Dashboard
               </Link>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 PRAGO. Tous droits réservés.
+              © 2026 PRAGO. Tous droits réservés.
             </p>
           </div>
         </div>
