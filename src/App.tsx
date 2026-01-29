@@ -4,11 +4,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+// Auth
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
 // Layouts
 import { AppLayout } from "@/components/layout/AppLayout";
 
 // Pages
 import Landing from "@/pages/Landing";
+import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import ChatIA from "@/pages/ChatIA";
 import SnapSolve from "@/pages/SnapSolve";
@@ -29,27 +34,34 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/faq" element={<FAQ />} />
-          
-          {/* App routes with sidebar layout */}
-          <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/chat" element={<ChatIA />} />
-            <Route path="/snap-solve" element={<SnapSolve />} />
-            <Route path="/quiz" element={<QuizFlashcards />} />
-            <Route path="/notes" element={<Notes />} />
-            <Route path="/comics" element={<Comics />} />
-            <Route path="/exam-prep" element={<ExamPrep />} />
-            <Route path="/profile" element={<Profile />} />
-          </Route>
-          
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/faq" element={<FAQ />} />
+            
+            {/* Protected app routes with sidebar layout */}
+            <Route element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/chat" element={<ChatIA />} />
+              <Route path="/snap-solve" element={<SnapSolve />} />
+              <Route path="/quiz" element={<QuizFlashcards />} />
+              <Route path="/notes" element={<Notes />} />
+              <Route path="/comics" element={<Comics />} />
+              <Route path="/exam-prep" element={<ExamPrep />} />
+              <Route path="/profile" element={<Profile />} />
+            </Route>
+            
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
