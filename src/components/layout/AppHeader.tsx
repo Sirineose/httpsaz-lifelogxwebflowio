@@ -33,13 +33,16 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
   };
 
   const handleSignOut = async () => {
+    // Clear guest mode on sign out
+    localStorage.removeItem('prago_guest_mode');
     await signOut();
     navigate("/");
   };
 
+  const isGuest = !user && localStorage.getItem('prago_guest_mode') === 'true';
   const userInitials = user?.email
     ? user.email.slice(0, 2).toUpperCase()
-    : "??";
+    : "IN";
 
   return (
     <header
@@ -105,16 +108,28 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user?.email}</p>
+                <p className="text-sm font-medium">
+                  {isGuest ? "Invité" : user?.email}
+                </p>
+                {isGuest && (
+                  <p className="text-xs text-muted-foreground">Mode invité</p>
+                )}
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/profile")}>
-                Mon profil
-              </DropdownMenuItem>
+              {!isGuest && (
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  Mon profil
+                </DropdownMenuItem>
+              )}
+              {isGuest && (
+                <DropdownMenuItem onClick={() => navigate("/auth")}>
+                  Se connecter
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
-                Se déconnecter
+                {isGuest ? "Quitter" : "Se déconnecter"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
