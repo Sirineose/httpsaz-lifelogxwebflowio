@@ -6,44 +6,46 @@
 
 @layer base {
   :root {
-    /* Light Mode - Premium Minimal */
-    --background: 0 0% 99%;
-    --foreground: 222 47% 11%;
+    /* Light Mode - PRAGO Violet/Blue SaaS Theme */
+    --background: 240 20% 99%;
+    --foreground: 240 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 240 20% 10%;
 
-    --primary: 245 82% 67%;
+    --primary: 255 80% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 240 15% 96%;
+    --secondary-foreground: 240 20% 10%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 240 15% 96%;
+    --muted-foreground: 240 10% 50%;
 
-    --accent: 245 82% 67%;
+    --accent: 280 75% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 245 82% 67%;
+    --border: 240 10% 92%;
+    --input: 240 10% 92%;
+    --ring: 255 80% 60%;
 
     --radius: 0.75rem;
 
-    /* PRAGO Custom Tokens */
-    --prago-gradient: linear-gradient(135deg, hsl(245 82% 67%) 0%, hsl(280 82% 65%) 50%, hsl(320 72% 60%) 100%);
-    --prago-gradient-subtle: linear-gradient(135deg, hsl(245 82% 67% / 0.1) 0%, hsl(280 82% 65% / 0.1) 100%);
-    --prago-glow: 0 0 40px hsl(245 82% 67% / 0.2);
-    --prago-shadow-sm: 0 1px 2px hsl(222 47% 11% / 0.05);
-    --prago-shadow: 0 4px 12px hsl(222 47% 11% / 0.08);
-    --prago-shadow-lg: 0 12px 40px hsl(222 47% 11% / 0.12);
+    /* PRAGO Custom Tokens - Enhanced Violet/Blue */
+    --prago-gradient: linear-gradient(135deg, hsl(255 80% 60%) 0%, hsl(280 75% 60%) 50%, hsl(300 70% 55%) 100%);
+    --prago-gradient-subtle: linear-gradient(135deg, hsl(255 80% 60% / 0.08) 0%, hsl(280 75% 60% / 0.08) 100%);
+    --prago-gradient-hero: linear-gradient(180deg, hsl(255 80% 95%) 0%, hsl(240 20% 99%) 100%);
+    --prago-glow: 0 0 50px hsl(255 80% 60% / 0.25);
+    --prago-glow-lg: 0 0 80px hsl(255 80% 60% / 0.35);
+    --prago-shadow-sm: 0 1px 3px hsl(240 20% 10% / 0.04);
+    --prago-shadow: 0 4px 16px hsl(240 20% 10% / 0.06);
+    --prago-shadow-lg: 0 16px 48px hsl(240 20% 10% / 0.1);
 
     /* Sidebar */
     --sidebar-width: 260px;
@@ -60,39 +62,40 @@
   }
 
   .dark {
-    --background: 224 32% 8%;
-    --foreground: 210 40% 98%;
+    --background: 240 20% 6%;
+    --foreground: 240 10% 95%;
 
-    --card: 224 32% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 20% 9%;
+    --card-foreground: 240 10% 95%;
 
-    --popover: 224 32% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 20% 9%;
+    --popover-foreground: 240 10% 95%;
 
-    --primary: 245 82% 67%;
+    --primary: 255 80% 65%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 32% 14%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 20% 14%;
+    --secondary-foreground: 240 10% 95%;
 
-    --muted: 224 32% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 240 20% 14%;
+    --muted-foreground: 240 10% 55%;
 
-    --accent: 245 82% 67%;
+    --accent: 280 75% 65%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 32% 16%;
-    --input: 224 32% 14%;
-    --ring: 245 82% 67%;
+    --border: 240 20% 16%;
+    --input: 240 20% 14%;
+    --ring: 255 80% 65%;
 
     /* Dark mode shadows */
-    --prago-shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.2);
-    --prago-shadow: 0 4px 12px hsl(0 0% 0% / 0.3);
-    --prago-shadow-lg: 0 12px 40px hsl(0 0% 0% / 0.4);
-    --prago-glow: 0 0 60px hsl(245 82% 67% / 0.3);
+    --prago-shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.25);
+    --prago-shadow: 0 4px 16px hsl(0 0% 0% / 0.35);
+    --prago-shadow-lg: 0 16px 48px hsl(0 0% 0% / 0.45);
+    --prago-glow: 0 0 60px hsl(255 80% 65% / 0.35);
+    --prago-glow-lg: 0 0 100px hsl(255 80% 65% / 0.4);
   }
 }
 
