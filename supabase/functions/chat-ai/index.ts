@@ -80,26 +80,26 @@ Règles :
       ...messages,
     ];
 
-    // Call Lovable AI Gateway
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableApiKey) {
-      console.error("LOVABLE_API_KEY is not set");
+    // Call Mistral API
+    const mistralApiKey = Deno.env.get("MISTRAL_API_KEY");
+    if (!mistralApiKey) {
+      console.error("MISTRAL_API_KEY is not set");
       return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
+        JSON.stringify({ error: "AI service not configured - MISTRAL_API_KEY missing" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Calling Lovable AI Gateway...");
+    console.log("Calling Mistral API...");
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${lovableApiKey}`,
+        "Authorization": `Bearer ${mistralApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "mistral-large-latest",
         messages: apiMessages,
         max_tokens: 2000,
         temperature: 0.7,
