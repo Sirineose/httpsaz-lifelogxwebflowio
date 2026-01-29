@@ -2,6 +2,10 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Camera, FileText, X, Sparkles, ArrowRight, Image as ImageIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
 
 type UploadState = "idle" | "uploading" | "analyzing" | "done";
 
@@ -9,54 +13,76 @@ export default function SnapSolve() {
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [preview, setPreview] = useState<string | null>(null);
   const [solution, setSolution] = useState<string | null>(null);
+  const [extractedText, setExtractedText] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string);
-        simulateUpload();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+        setPreview(base64);
+        await analyzeImage(base64);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const simulateUpload = () => {
+  const analyzeImage = async (imageBase64: string) => {
     setUploadState("uploading");
-    setTimeout(() => {
+    
+    // Check if user is authenticated
+    if (!user) {
+      // Demo mode for guests
       setUploadState("analyzing");
       setTimeout(() => {
         setUploadState("done");
-        setSolution(`**Analyse de l'exercice**
+        setSolution(`🔒 **Mode invité**
 
-L'exercice demande de résoudre l'équation suivante :
-\`2x² + 5x - 3 = 0\`
+Pour accéder à l'analyse complète de vos exercices, veuillez vous connecter ou créer un compte.
 
-**Méthode de résolution : Formule quadratique**
+**Fonctionnalités disponibles avec un compte :**
+- Extraction du texte via Google Cloud Vision
+- Résolution détaillée par l'IA Mistral
+- Historique de vos exercices analysés`);
+      }, 1500);
+      return;
+    }
 
-Nous utilisons la formule : x = (-b ± √(b² - 4ac)) / 2a
+    try {
+      setUploadState("analyzing");
+      
+      const { data, error } = await supabase.functions.invoke("analyze-image", {
+        body: { imageBase64 },
+      });
 
-Avec a = 2, b = 5, c = -3
+      if (error) {
+        throw error;
+      }
 
-**Étape 1 : Calculer le discriminant**
-Δ = b² - 4ac = 25 - 4(2)(-3) = 25 + 24 = 49
-
-**Étape 2 : Trouver les solutions**
-x₁ = (-5 + 7) / 4 = 2/4 = **0.5**
-x₂ = (-5 - 7) / 4 = -12/4 = **-3**
-
-**Réponse finale :**
-Les solutions sont x = 0.5 et x = -3`);
-      }, 2000);
-    }, 1500);
+      setExtractedText(data.extractedText);
+      setSolution(data.solution);
+      setUploadState("done");
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'analyser l'image. Réessayez.",
+        variant: "destructive",
+      });
+      setUploadState("idle");
+      setPreview(null);
+    }
   };
 
   const resetUpload = () => {
     setUploadState("idle");
     setPreview(null);
     setSolution(null);
+    setExtractedText(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -74,7 +100,9 @@ Les solutions sont x = 0.5 et x = -3`);
           Snap & Solve
         </h1>
         <p className="text-muted-foreground">
-          Prends une photo de ton exercice et obtiens la solution détaillée instantanément.
+          {user 
+            ? "Prends une photo de ton exercice et obtiens la solution détaillée instantanément."
+            : "Connecte-toi pour analyser tes exercices avec l'IA."}
         </p>
       </div>
 
@@ -92,10 +120,11 @@ Les solutions sont x = 0.5 et x = -3`);
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,.pdf"
+                  accept="image/*"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
+                  capture="environment"
                 />
                 <label
                   htmlFor="file-upload"
@@ -116,26 +145,25 @@ Les solutions sont x = 0.5 et x = -3`);
                         <ImageIcon className="w-4 h-4" />
                         Images
                       </span>
-                      <span className="flex items-center gap-1">
-                        <FileText className="w-4 h-4" />
-                        PDF
-                      </span>
                     </div>
                   </div>
                 </label>
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors">
+                  <label 
+                    htmlFor="file-upload"
+                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors cursor-pointer"
+                  >
                     <Camera className="w-6 h-6 mx-auto mb-2 text-primary" />
                     <span className="text-sm font-medium">Prendre une photo</span>
-                  </button>
+                  </label>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
                   >
                     <FileText className="w-6 h-6 mx-auto mb-2 text-info" />
-                    <span className="text-sm font-medium">Importer un PDF</span>
+                    <span className="text-sm font-medium">Galerie</span>
                   </button>
                 </div>
               </motion.div>
@@ -199,19 +227,28 @@ Les solutions sont x = 0.5 et x = -3`);
                   </div>
                   <div>
                     <h3 className="font-display font-semibold">Solution détaillée</h3>
-                    <p className="text-xs text-muted-foreground">Générée par l'IA</p>
+                    <p className="text-xs text-muted-foreground">Générée par Mistral AI</p>
                   </div>
                 </div>
+                
+                {extractedText && (
+                  <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Texte extrait :</p>
+                    <p className="text-sm">{extractedText.substring(0, 200)}{extractedText.length > 200 ? "..." : ""}</p>
+                  </div>
+                )}
+                
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap text-sm">{solution}</div>
+                  <ReactMarkdown>{solution}</ReactMarkdown>
                 </div>
+                
                 <div className="mt-6 pt-4 border-t border-border flex items-center gap-3">
-                  <button className="prago-btn-primary flex-1 flex items-center justify-center gap-2">
+                  <button 
+                    onClick={resetUpload}
+                    className="prago-btn-primary flex-1 flex items-center justify-center gap-2"
+                  >
                     <Sparkles className="w-4 h-4" />
-                    Approfondir
-                  </button>
-                  <button className="prago-btn-secondary">
-                    Partager
+                    Nouvel exercice
                   </button>
                 </div>
               </motion.div>
@@ -230,7 +267,7 @@ Les solutions sont x = 0.5 et x = -3`);
                     En attente d'un exercice
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Importe une image ou un PDF pour commencer l'analyse.
+                    Importe une image pour commencer l'analyse.
                   </p>
                 </div>
               </motion.div>
