@@ -1,6 +1,15 @@
-import { Bell, Search, Moon, Sun } from "lucide-react";
+import { Bell, Search, Moon, Sun, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AppHeaderProps {
   sidebarCollapsed: boolean;
@@ -9,6 +18,8 @@ interface AppHeaderProps {
 export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
   const [isDark, setIsDark] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains("dark");
@@ -20,6 +31,15 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
     setIsDark(newIsDark);
     document.documentElement.classList.toggle("dark", newIsDark);
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const userInitials = user?.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : "??";
 
   return (
     <header
@@ -76,10 +96,28 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
           </button>
 
-          {/* User Avatar */}
-          <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-medium text-sm ml-1">
-            JD
-          </button>
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-medium text-sm ml-1 hover:opacity-90 transition-opacity">
+                {userInitials}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/profile")}>
+                Mon profil
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Se déconnecter
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

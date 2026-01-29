@@ -53,10 +53,10 @@ export default function Landing() {
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="prago-btn-ghost text-sm py-2">
+            <Link to="/auth" className="prago-btn-ghost text-sm py-2">
               Connexion
             </Link>
-            <Link to="/dashboard" className="prago-btn-primary text-sm py-2 hidden sm:flex">
+            <Link to="/auth" className="prago-btn-primary text-sm py-2 hidden sm:flex">
               Commencer gratuitement
             </Link>
           </div>
@@ -110,7 +110,7 @@ export default function Landing() {
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <Link
-                to="/dashboard"
+                to="/auth"
                 className="prago-btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 Démarrer gratuitement
@@ -246,7 +246,7 @@ export default function Landing() {
               Rejoins des milliers d'étudiants qui utilisent déjà PRAGO pour réussir leurs études.
             </p>
             <Link
-              to="/dashboard"
+              to="/auth"
               className="prago-btn-primary inline-flex items-center gap-2"
             >
               Commencer gratuitement
