@@ -19,6 +19,7 @@ import ExamPrep from "@/pages/ExamPrep";
 import Profile from "@/pages/Profile";
 import Pricing from "@/pages/Pricing";
 import FAQ from "@/pages/FAQ";
+import Contact from "@/pages/Contact";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/contact" element={<Contact />} />
           
           {/* App routes with sidebar layout */}
           <Route element={<AppLayout />}>

@@ -252,9 +252,9 @@ export default function FAQ() {
               Notre équipe est là pour t'aider. Contacte-nous et nous te répondrons rapidement.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button className="prago-btn-primary">
+              <NavLink to="/contact" className="prago-btn-primary">
                 Contacter le support
-              </button>
+              </NavLink>
               <NavLink to="/chat" className="prago-btn-secondary">
                 Demander à l'IA
               </NavLink>
