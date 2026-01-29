@@ -9,6 +9,9 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  
+  // Check for guest mode
+  const isGuest = localStorage.getItem('prago_guest_mode') === 'true';
 
   if (loading) {
     return (
@@ -21,7 +24,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  // Allow access if user is authenticated OR in guest mode
+  if (!user && !isGuest) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 

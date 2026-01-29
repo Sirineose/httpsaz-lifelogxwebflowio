@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowLeft, User } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
@@ -24,6 +25,15 @@ export default function Auth() {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleGuestAccess = () => {
+    localStorage.setItem('prago_guest_mode', 'true');
+    toast({
+      title: 'Mode invité',
+      description: 'Bienvenue ! Certaines fonctionnalités sont limitées.',
+    });
+    navigate('/dashboard');
+  };
 
   const validateForm = () => {
     try {
@@ -250,6 +260,28 @@ export default function Auth() {
                   </Button>
                 </form>
               </TabsContent>
+              {/* Guest Access */}
+              <div className="pt-2">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={handleGuestAccess}
+                  disabled={loading}
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Continuer en tant qu'invité
+                </Button>
+              </div>
             </CardContent>
           </Tabs>
         </Card>
