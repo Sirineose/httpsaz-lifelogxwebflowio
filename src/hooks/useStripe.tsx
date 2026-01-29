@@ -25,11 +25,12 @@ export function useStripe() {
   });
 
   const fetchSubscriptionStatus = useCallback(async () => {
-    if (!user?.email) return;
+    if (!user) return;
 
     try {
+      // Server uses authenticated user's email - no need to send it
       const { data, error } = await supabase.functions.invoke('stripe-checkout/subscription-status', {
-        body: { email: user.email },
+        body: {},
       });
 
       if (error) {
@@ -45,7 +46,7 @@ export function useStripe() {
     } catch (err) {
       console.error('Error fetching subscription status:', err);
     }
-  }, [user?.email]);
+  }, [user]);
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -58,11 +59,10 @@ export function useStripe() {
 
     setLoading(true);
     try {
+      // Server uses authenticated user - no need to send userId/email
       const { data, error } = await supabase.functions.invoke('stripe-checkout/create-checkout', {
         body: {
           priceId,
-          userId: user.id,
-          email: user.email,
           successUrl: `${window.location.origin}/dashboard?success=true`,
           cancelUrl: `${window.location.origin}/pricing?canceled=true`,
         },
@@ -82,15 +82,15 @@ export function useStripe() {
   };
 
   const openCustomerPortal = async () => {
-    if (!subscriptionData.customerId) {
-      throw new Error('No customer ID found');
+    if (!user) {
+      throw new Error('User must be logged in');
     }
 
     setLoading(true);
     try {
+      // Server looks up customer from authenticated user - no need to send customerId
       const { data, error } = await supabase.functions.invoke('stripe-checkout/customer-portal', {
         body: {
-          customerId: subscriptionData.customerId,
           returnUrl: `${window.location.origin}/profile`,
         },
       });
