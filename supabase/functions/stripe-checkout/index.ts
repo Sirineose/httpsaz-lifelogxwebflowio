@@ -1,4 +1,5 @@
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,11 +11,43 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
 // Price IDs - à configurer dans Stripe Dashboard
 const PRICE_IDS = {
   pro_monthly: Deno.env.get('STRIPE_PRICE_PRO_MONTHLY') || 'price_pro_monthly',
   premium_monthly: Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY') || 'price_premium_monthly',
 };
+
+// Helper function to authenticate user
+async function authenticateUser(req: Request): Promise<{ user: { id: string; email: string } | null; error: string | null }> {
+  const authHeader = req.headers.get('Authorization');
+  
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { user: null, error: 'Missing or invalid authorization header' };
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data, error } = await supabase.auth.getUser(token);
+
+  if (error || !data?.user) {
+    console.error('Auth error:', error?.message);
+    return { user: null, error: 'Unauthorized' };
+  }
+
+  return { 
+    user: { 
+      id: data.user.id, 
+      email: data.user.email || '' 
+    }, 
+    error: null 
+  };
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -26,11 +59,28 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const path = url.pathname.split('/').pop();
 
+    // Authenticate user for all routes
+    const { user, error: authError } = await authenticateUser(req);
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id, user.email);
+
     // Route: Create checkout session
     if (path === 'create-checkout' && req.method === 'POST') {
-      const { priceId, userId, email, successUrl, cancelUrl } = await req.json();
+      const { priceId, successUrl, cancelUrl } = await req.json();
 
-      console.log('Creating checkout session for:', { priceId, userId, email });
+      // Use authenticated user's email and ID - ignore client-provided values
+      const email = user.email;
+      const userId = user.id;
+
+      console.log('Creating checkout session for authenticated user:', { priceId, userId, email });
 
       // Check if customer already exists
       let customerId: string | undefined;
@@ -53,7 +103,7 @@ Deno.serve(async (req) => {
         success_url: successUrl || `${req.headers.get('origin')}/dashboard?success=true`,
         cancel_url: cancelUrl || `${req.headers.get('origin')}/pricing?canceled=true`,
         metadata: {
-          user_id: userId || '',
+          user_id: userId,
         },
       };
 
@@ -75,9 +125,20 @@ Deno.serve(async (req) => {
 
     // Route: Create customer portal session
     if (path === 'customer-portal' && req.method === 'POST') {
-      const { customerId, returnUrl } = await req.json();
+      const { returnUrl } = await req.json();
 
-      console.log('Creating portal session for customer:', customerId);
+      // Get customer ID from Stripe using authenticated user's email
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      
+      if (customers.data.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No Stripe customer found for this account' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const customerId = customers.data[0].id;
+      console.log('Creating portal session for authenticated customer:', customerId);
 
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
@@ -92,9 +153,10 @@ Deno.serve(async (req) => {
 
     // Route: Get subscription status
     if (path === 'subscription-status' && req.method === 'POST') {
-      const { email } = await req.json();
+      // Use authenticated user's email - ignore client-provided email
+      const email = user.email;
 
-      console.log('Checking subscription for:', email);
+      console.log('Checking subscription for authenticated user:', email);
 
       const customers = await stripe.customers.list({ email, limit: 1 });
       
