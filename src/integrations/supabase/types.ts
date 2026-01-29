@@ -24,6 +24,10 @@ export type Database = {
           id: string
           last_name: string | null
           school: string | null
+          stripe_customer_id: string | null
+          subscription_cancel_at_period_end: boolean | null
+          subscription_id: string | null
+          subscription_status: string | null
           updated_at: string
           user_id: string
         }
@@ -36,6 +40,10 @@ export type Database = {
           id?: string
           last_name?: string | null
           school?: string | null
+          stripe_customer_id?: string | null
+          subscription_cancel_at_period_end?: boolean | null
+          subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -48,6 +56,10 @@ export type Database = {
           id?: string
           last_name?: string | null
           school?: string | null
+          stripe_customer_id?: string | null
+          subscription_cancel_at_period_end?: boolean | null
+          subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -1,7 +1,16 @@
 import { motion } from "framer-motion";
-import { Check, Sparkles, Zap, Crown, HelpCircle } from "lucide-react";
+import { Check, Sparkles, Zap, Crown, HelpCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useStripe } from "@/hooks/useStripe";
+import { toast } from "sonner";
+
+// Price IDs - à configurer dans Stripe Dashboard
+const STRIPE_PRICE_IDS = {
+  pro: 'price_pro_monthly', // Remplacer par votre vrai price_id
+  premium: 'price_premium_monthly', // Remplacer par votre vrai price_id
+};
 
 const plans = [
   {
@@ -11,6 +20,7 @@ const plans = [
     description: "Parfait pour découvrir PRAGO",
     icon: Zap,
     popular: false,
+    priceId: null,
     features: [
       "10 requêtes IA par jour",
       "Quiz illimités",
@@ -32,6 +42,7 @@ const plans = [
     description: "Pour les étudiants sérieux",
     icon: Sparkles,
     popular: true,
+    priceId: STRIPE_PRICE_IDS.pro,
     features: [
       "100 requêtes IA par jour",
       "Snap & Solve illimité",
@@ -51,6 +62,7 @@ const plans = [
     description: "L'expérience complète",
     icon: Crown,
     popular: false,
+    priceId: STRIPE_PRICE_IDS.premium,
     features: [
       "Requêtes IA illimitées",
       "Toutes les fonctionnalités Pro",
@@ -82,6 +94,31 @@ const faqs = [
 ];
 
 export default function Pricing() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { loading, plan: currentPlan, createCheckoutSession } = useStripe();
+
+  const handleSubscribe = async (priceId: string | null) => {
+    if (!priceId) {
+      // Free plan - go to dashboard
+      navigate('/dashboard');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Vous devez être connecté pour vous abonner');
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      await createCheckoutSession(priceId);
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast.error('Erreur lors de la création du paiement');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -161,12 +198,16 @@ export default function Pricing() {
               </div>
 
               <button
+                onClick={() => handleSubscribe(plan.priceId)}
+                disabled={loading || (plan.priceId && currentPlan === plan.name.toLowerCase())}
                 className={cn(
-                  "w-full mb-6",
-                  plan.ctaVariant === "primary" ? "prago-btn-primary" : "prago-btn-secondary"
+                  "w-full mb-6 flex items-center justify-center gap-2",
+                  plan.ctaVariant === "primary" ? "prago-btn-primary" : "prago-btn-secondary",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
               >
-                {plan.cta}
+                {loading && plan.priceId && <Loader2 className="w-4 h-4 animate-spin" />}
+                {currentPlan === plan.name.toLowerCase() ? "Plan actuel" : plan.cta}
               </button>
 
               <div className="space-y-3">
