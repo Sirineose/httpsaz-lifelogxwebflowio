@@ -77,7 +77,7 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
           </button>
 
           {/* User Avatar */}
-          <button className="w-9 h-9 rounded-xl prago-gradient-bg flex items-center justify-center text-white font-bold text-sm ml-1 shadow-prago-sm hover:shadow-prago transition-shadow">
+          <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-medium text-sm ml-1">
             JD
           </button>
         </div>

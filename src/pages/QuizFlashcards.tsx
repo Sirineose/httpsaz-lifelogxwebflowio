@@ -1,11 +1,9 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight, Sparkles, Layers, Target, Upload, Image, FileText, Plus } from "lucide-react";
+import { Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight, Sparkles, Layers, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 
 type Mode = "quiz" | "flashcards";
-type CreateMode = "none" | "photo" | "pdf";
 
 interface QuizQuestion {
   id: number;
@@ -18,12 +16,6 @@ interface Flashcard {
   id: number;
   front: string;
   back: string;
-}
-
-interface UploadedFile {
-  name: string;
-  type: string;
-  preview?: string;
 }
 
 const quizQuestions: QuizQuestion[] = [
@@ -55,20 +47,14 @@ const flashcards: Flashcard[] = [
 
 export default function QuizFlashcards() {
   const [mode, setMode] = useState<Mode>("quiz");
-  const [createMode, setCreateMode] = useState<CreateMode>("none");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [knownCards, setKnownCards] = useState<number[]>([]);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   const currentQuestion = quizQuestions[currentQuestionIndex];
   const currentCard = flashcards[currentCardIndex];
@@ -118,95 +104,12 @@ export default function QuizFlashcards() {
     }
   };
 
-  const handleFileSelect = (type: "photo" | "pdf") => {
-    setCreateMode(type);
-    if (fileInputRef.current) {
-      fileInputRef.current.accept = type === "photo" ? "image/*" : ".pdf";
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newFiles: UploadedFile[] = [];
-    
-    Array.from(files).forEach((file) => {
-      const fileData: UploadedFile = {
-        name: file.name,
-        type: file.type,
-      };
-
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          fileData.preview = event.target?.result as string;
-          setUploadedFiles((prev) => [...prev, fileData]);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        newFiles.push(fileData);
-      }
-    });
-
-    if (newFiles.length > 0) {
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
-    }
-
-    // Reset input
-    e.target.value = "";
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleGenerate = async () => {
-    if (uploadedFiles.length === 0) {
-      toast({
-        title: "Aucun fichier",
-        description: "Ajoute au moins une photo ou un PDF pour générer du contenu.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    
-    // Simulate AI processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    toast({
-      title: "Contenu généré !",
-      description: `${mode === "quiz" ? "Quiz" : "Flashcards"} créés à partir de ${uploadedFiles.length} fichier(s).`,
-    });
-    
-    setIsProcessing(false);
-    setUploadedFiles([]);
-    setCreateMode("none");
-  };
-
-  const cancelCreate = () => {
-    setCreateMode("none");
-    setUploadedFiles([]);
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="max-w-3xl mx-auto"
     >
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">
@@ -217,140 +120,29 @@ export default function QuizFlashcards() {
         </p>
       </div>
 
-      {/* Mode Toggle + Create Button */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-2 p-1.5 bg-secondary rounded-xl w-fit">
-          <button
-            onClick={() => setMode("quiz")}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              mode === "quiz" ? "bg-background shadow-prago-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Target className="w-4 h-4" />
-            Quiz
-          </button>
-          <button
-            onClick={() => setMode("flashcards")}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              mode === "flashcards" ? "bg-background shadow-prago-sm" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Layers className="w-4 h-4" />
-            Flashcards
-          </button>
-        </div>
-
-        {/* Create from file buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleFileSelect("photo")}
-            className="prago-btn-secondary text-sm"
-          >
-            <Image className="w-4 h-4" />
-            <span className="hidden sm:inline">Créer depuis</span> Photo
-          </button>
-          <button
-            onClick={() => handleFileSelect("pdf")}
-            className="prago-btn-secondary text-sm"
-          >
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Créer depuis</span> PDF
-          </button>
-        </div>
+      {/* Mode Toggle */}
+      <div className="flex items-center gap-2 p-1.5 bg-secondary rounded-xl mb-8 w-fit">
+        <button
+          onClick={() => setMode("quiz")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+            mode === "quiz" ? "bg-background shadow-prago-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Target className="w-4 h-4" />
+          Quiz
+        </button>
+        <button
+          onClick={() => setMode("flashcards")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+            mode === "flashcards" ? "bg-background shadow-prago-sm" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Layers className="w-4 h-4" />
+          Flashcards
+        </button>
       </div>
-
-      {/* Upload Panel */}
-      <AnimatePresence>
-        {uploadedFiles.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-8"
-          >
-            <div className="prago-card p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-primary" />
-                  Fichiers à analyser
-                </h3>
-                <span className="text-sm text-muted-foreground">
-                  {uploadedFiles.length} fichier(s)
-                </span>
-              </div>
-
-              {/* Files Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-                {uploadedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="relative group rounded-xl border border-border overflow-hidden bg-secondary/30"
-                  >
-                    {file.preview ? (
-                      <img
-                        src={file.preview}
-                        alt={file.name}
-                        className="w-full h-24 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-24 flex items-center justify-center">
-                        <FileText className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="p-2">
-                      <p className="text-xs truncate">{file.name}</p>
-                    </div>
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-
-                {/* Add more button */}
-                <button
-                  onClick={() => handleFileSelect(createMode === "pdf" ? "pdf" : "photo")}
-                  className="h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 transition-colors"
-                >
-                  <Plus className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Ajouter</span>
-                </button>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleGenerate}
-                  disabled={isProcessing}
-                  className="prago-btn-primary flex-1 disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Génération en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Générer {mode === "quiz" ? "le quiz" : "les flashcards"}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={cancelCreate}
-                  className="prago-btn-ghost"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {mode === "quiz" ? (
