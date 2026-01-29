@@ -17,6 +17,8 @@ import Notes from "@/pages/Notes";
 import Comics from "@/pages/Comics";
 import ExamPrep from "@/pages/ExamPrep";
 import Profile from "@/pages/Profile";
+import Pricing from "@/pages/Pricing";
+import FAQ from "@/pages/FAQ";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,8 @@ const App = () => (
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Landing />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/faq" element={<FAQ />} />
           
           {/* App routes with sidebar layout */}
           <Route element={<AppLayout />}>
