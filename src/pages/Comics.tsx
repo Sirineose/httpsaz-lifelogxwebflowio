@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Sparkles, Loader2, Trash2, Wand2, Image as ImageIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { BookOpen, Sparkles, Loader2, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useComics, Comic, ComicPanel } from "@/hooks/useComics";
 import { useAIGeneration } from "@/hooks/useAIGeneration";
@@ -9,10 +10,11 @@ import { DocumentUpload } from "@/components/DocumentUpload";
 import { ComicReader } from "@/components/comics/ComicReader";
 import { toast } from "sonner";
 
-const subjects = ["Biologie", "Histoire", "Mathématiques", "Physique", "Français", "Général"];
+const subjectKeys = ["biology", "history", "mathematics", "physics", "french", "general"] as const;
 const emojis = ["🧬", "🏭", "📐", "🍎", "📚", "🎨", "🌍", "⚡", "🔬", "🧪"];
 
 export default function Comics() {
+  const { t } = useTranslation();
   const { comics, loading, createComic, deleteComic } = useComics();
   const { isGenerating, progress, generateFromImage } = useAIGeneration();
   
@@ -20,38 +22,38 @@ export default function Comics() {
   const [isAIOpen, setIsAIOpen] = useState(false);
 
   // AI state
-  const [aiSubject, setAISubject] = useState("Biologie");
+  const [aiSubject, setAISubject] = useState("biology");
   const [aiPanelCount, setAIPanelCount] = useState(4);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleAIGenerate = async () => {
     if (!selectedImage) {
-      toast.error("Sélectionne une image de ton cours");
+      toast.error(t('comics.selectImage'));
       return;
     }
 
     const result = await generateFromImage(
       selectedImage,
       "comic",
-      aiSubject,
+      t(`comics.subjects.${aiSubject}`),
       { count: aiPanelCount }
     );
 
     if (!result || !result.title || !result.panels) {
-      toast.error("Erreur lors de la génération");
+      toast.error(t('comics.error'));
       return;
     }
 
     const newComic = await createComic({
       title: result.title,
-      subject: aiSubject,
+      subject: t(`comics.subjects.${aiSubject}`),
       thumbnail: emojis[Math.floor(Math.random() * emojis.length)],
       panels: result.panels as ComicPanel[],
       duration: `${result.panels.length * 2} min`,
     });
 
     if (newComic) {
-      toast.success("BD générée avec succès ! 🎨");
+      toast.success(t('comics.success'));
       setIsAIOpen(false);
       setSelectedImage(null);
       setSelectedComic(newComic);
@@ -83,8 +85,8 @@ export default function Comics() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
       <div className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">Cours en BD</h1>
-        <p className="text-muted-foreground">Apprends des concepts complexes grâce à des bandes dessinées éducatives générées par l'IA.</p>
+        <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">{t('comics.title')}</h1>
+        <p className="text-muted-foreground">{t('comics.subtitle')}</p>
       </div>
 
       <div className="prago-card prago-gradient-border p-6 mb-8">
@@ -93,25 +95,25 @@ export default function Comics() {
             <Sparkles className="w-7 h-7 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-display font-semibold text-lg mb-1">Génère ta propre BD avec l'IA</h3>
-            <p className="text-sm text-muted-foreground">Importe une image de ton cours et l'IA créera une BD éducative personnalisée.</p>
+            <h3 className="font-display font-semibold text-lg mb-1">{t('comics.generateTitle')}</h3>
+            <p className="text-sm text-muted-foreground">{t('comics.generateDesc')}</p>
           </div>
           <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>
             <DialogTrigger asChild>
               <button className="prago-btn-primary w-full md:w-auto">
                 <Wand2 className="w-4 h-4 mr-2" />
-                Générer avec IA
+                {t('comics.generateWithAI')}
               </button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
-                  Générer une BD avec l'IA
+                  {t('comics.generateDialogTitle')}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
-                <p className="text-sm text-muted-foreground">Importe une image de ton cours et l'IA créera une BD éducative pour t'aider à apprendre.</p>
+                <p className="text-sm text-muted-foreground">{t('comics.generateDialogDesc')}</p>
                 
                 <DocumentUpload
                   onFileSelected={(base64) => setSelectedImage(base64)}
@@ -120,15 +122,15 @@ export default function Comics() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Matière</label>
+                    <label className="text-sm font-medium mb-1 block">{t('comics.subject')}</label>
                     <select value={aiSubject} onChange={(e) => setAISubject(e.target.value)} className="prago-input w-full">
-                      {subjects.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                      {subjectKeys.map((s) => (
+                        <option key={s} value={s}>{t(`comics.subjects.${s}`)}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Panels</label>
+                    <label className="text-sm font-medium mb-1 block">{t('comics.panels')}</label>
                     <select value={aiPanelCount} onChange={(e) => setAIPanelCount(Number(e.target.value))} className="prago-input w-full">
                       <option value={4}>4 panels</option>
                       <option value={6}>6 panels</option>
@@ -148,7 +150,7 @@ export default function Comics() {
 
                 <button onClick={handleAIGenerate} disabled={!selectedImage || isGenerating} className="prago-btn-primary w-full flex items-center justify-center gap-2">
                   {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                  Générer la BD
+                  {t('comics.generateBtn')}
                 </button>
               </div>
             </DialogContent>
@@ -156,7 +158,7 @@ export default function Comics() {
         </div>
       </div>
 
-      <h2 className="font-display text-lg font-semibold mb-4">Tes BD</h2>
+      <h2 className="font-display text-lg font-semibold mb-4">{t('comics.yourComics')}</h2>
       
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -165,11 +167,11 @@ export default function Comics() {
       ) : comics.length === 0 ? (
         <div className="prago-card p-12 text-center">
           <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-display text-lg font-semibold mb-2">Aucune BD</h3>
-          <p className="text-muted-foreground text-sm mb-4">Importe une image de ton cours et l'IA créera une BD éducative</p>
+          <h3 className="font-display text-lg font-semibold mb-2">{t('comics.noComics')}</h3>
+          <p className="text-muted-foreground text-sm mb-4">{t('comics.noComicsDesc')}</p>
           <button onClick={() => setIsAIOpen(true)} className="prago-btn-primary">
             <Wand2 className="w-4 h-4 mr-2" />
-            Générer avec IA
+            {t('comics.generateWithAI')}
           </button>
         </div>
       ) : (

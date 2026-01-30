@@ -15,7 +15,13 @@
     "yes": "Yes",
     "no": "No",
     "or": "or",
-    "and": "and"
+    "and": "and",
+    "all": "All",
+    "none": "None",
+    "error": "Error",
+    "success": "Success",
+    "copied": "Copied!",
+    "copiedToClipboard": "Message copied to clipboard."
   },
   "auth": {
     "login": "Login",
@@ -30,7 +36,8 @@
     "guest": "Guest",
     "guestMode": "Guest mode",
     "profile": "My profile",
-    "quit": "Quit"
+    "quit": "Quit",
+    "mustBeLoggedIn": "You must be logged in to subscribe"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -74,6 +81,7 @@
     "ctaTitle": "Ready to transform your studies?",
     "ctaDesc": "Join thousands of students using PRAGO to ace their exams.",
     "ctaButton": "Get started now",
+    "errorCreatingPayment": "Error creating payment",
     "plans": {
       "free": {
         "name": "Free",
@@ -146,23 +154,133 @@
     }
   },
   "dashboard": {
-    "welcome": "Welcome back",
+    "welcome": "Hello",
     "welcomeGuest": "Welcome",
     "subtitle": "Continue your progress and reach your goals.",
+    "goalsInProgress": "you have {{count}} goals in progress.",
     "quickActions": "Quick actions",
     "recentActivity": "Recent activity",
-    "studyTime": "Study time",
+    "studyTime": "Hours studied",
     "quizzesCompleted": "Quizzes completed",
     "cardsReviewed": "Cards reviewed",
-    "streak": "Current streak"
+    "streak": "Current streak",
+    "notesCreated": "Notes created",
+    "weeklyProgress": "Weekly progress",
+    "viewDetails": "View details",
+    "thisWeek": "This week",
+    "vsLastWeek": "vs last week",
+    "viewHistory": "View full history",
+    "continueLearning": "Continue your course on",
+    "chapterProgress": "Chapter {{chapter}}: {{title}} — {{progress}}% complete",
+    "continue": "Continue",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "actions": {
+      "chatAI": "AI Chat",
+      "chatAIDesc": "Ask a question",
+      "snapSolve": "Snap & Solve",
+      "snapSolveDesc": "Solve an exercise",
+      "newQuiz": "New Quiz",
+      "newQuizDesc": "Test your knowledge",
+      "comics": "Comic Courses",
+      "comicsDesc": "Learn visually"
+    }
   },
   "chat": {
-    "title": "AI Chat",
+    "title": "AI Assistant",
     "subtitle": "Your personal assistant for studying",
     "placeholder": "Ask your question...",
     "send": "Send",
     "thinking": "Thinking...",
-    "suggestions": "Suggestions"
+    "suggestions": "Suggestions to get started:",
+    "online": "Online",
+    "readyToHelp": "Ready to help you",
+    "messages": "messages",
+    "welcomeMessage": "Hello! 👋 I'm your educational AI assistant. How can I help you with your learning today?",
+    "errorMessage": "Sorry, an error occurred. Please try again. 🙁",
+    "errorTitle": "Error",
+    "errorDescription": "Unable to contact the AI assistant. Try again.",
+    "poweredByAI": "Powered by AI • Responses may contain errors",
+    "suggestionItems": {
+      "derivatives": "Explain derivatives to me",
+      "frenchRevolution": "Quiz on the French Revolution",
+      "summarize": "Summarize this chapter",
+      "helpExercise": "Help me with this exercise"
+    }
+  },
+  "notes": {
+    "title": "Notes & Summaries",
+    "subtitle": "Intelligent organization of your courses",
+    "newNote": "New note",
+    "allNotes": "All notes",
+    "synthesis": "Summaries",
+    "aiSynthesis": "AI Summary",
+    "manual": "Manual",
+    "generateSynthesis": "Generate a summary",
+    "generateSynthesisDesc": "Upload an image of your course and AI will create a structured summary.",
+    "subject": "Subject",
+    "subjects": {
+      "all": "All",
+      "mathematics": "Mathematics",
+      "history": "History",
+      "biology": "Biology",
+      "physics": "Physics",
+      "french": "French",
+      "general": "General"
+    },
+    "noNotes": "No notes found",
+    "generateWithAI": "Generate with AI",
+    "createNote": "Create a note manually",
+    "title_field": "Title",
+    "titlePlaceholder": "Note title",
+    "content": "Content",
+    "contentPlaceholder": "Note content...",
+    "tags": "Tags (comma separated)",
+    "tagsPlaceholder": "Calculus, Analysis, ...",
+    "createNoteBtn": "Create note",
+    "editNote": "Edit note",
+    "saveBtn": "Save",
+    "deleteNote": "Delete",
+    "noContent": "No content",
+    "aiGenerated": "AI",
+    "aiSynthesisLabel": "AI Summary",
+    "selectImage": "Select an image of your course",
+    "synthesisSuccess": "Summary generated successfully!",
+    "generationError": "Error during generation"
+  },
+  "comics": {
+    "title": "Comic Courses",
+    "subtitle": "Learn complex concepts through AI-generated educational comics.",
+    "generateWithAI": "Generate with AI",
+    "generateTitle": "Generate your own comic with AI",
+    "generateDesc": "Upload an image of your course and AI will create a personalized educational comic.",
+    "generateDialogTitle": "Generate a comic with AI",
+    "generateDialogDesc": "Upload an image of your course and AI will create an educational comic to help you learn.",
+    "subject": "Subject",
+    "panels": "Panels",
+    "panelsCount": "{{count}} panels",
+    "generateBtn": "Generate comic",
+    "yourComics": "Your comics",
+    "noComics": "No comics",
+    "noComicsDesc": "Upload an image of your course and AI will create an educational comic",
+    "selectImage": "Select an image of your course",
+    "success": "Comic generated successfully! 🎨",
+    "error": "Error during generation",
+    "subjects": {
+      "biology": "Biology",
+      "history": "History",
+      "mathematics": "Mathematics",
+      "physics": "Physics",
+      "french": "French",
+      "general": "General"
+    }
   },
   "snapSolve": {
     "title": "Snap & Solve",
@@ -171,13 +289,6 @@
     "camera": "Use camera",
     "dragDrop": "Drag and drop your file here",
     "analyzing": "Analyzing..."
-  },
-  "notes": {
-    "title": "Notes & Summaries",
-    "subtitle": "Organize your courses intelligently",
-    "newNote": "New note",
-    "allNotes": "All notes",
-    "synthesis": "Summaries"
   },
   "profile": {
     "title": "My Profile",
@@ -197,5 +308,11 @@
     "fr": "Français",
     "en": "English",
     "ar": "العربية"
+  },
+  "time": {
+    "ago": "ago",
+    "hours": "h",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}} days ago"
   }
 }

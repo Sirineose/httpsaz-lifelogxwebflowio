@@ -15,7 +15,13 @@
     "yes": "Oui",
     "no": "Non",
     "or": "ou",
-    "and": "et"
+    "and": "et",
+    "all": "Tous",
+    "none": "Aucun",
+    "error": "Erreur",
+    "success": "Succès",
+    "copied": "Copié !",
+    "copiedToClipboard": "Le message a été copié dans le presse-papiers."
   },
   "auth": {
     "login": "Se connecter",
@@ -30,7 +36,8 @@
     "guest": "Invité",
     "guestMode": "Mode invité",
     "profile": "Mon profil",
-    "quit": "Quitter"
+    "quit": "Quitter",
+    "mustBeLoggedIn": "Vous devez être connecté pour vous abonner"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -74,6 +81,7 @@
     "ctaTitle": "Prêt à transformer tes études ?",
     "ctaDesc": "Rejoins des milliers d'étudiants qui utilisent PRAGO pour réussir leurs examens.",
     "ctaButton": "Commencer maintenant",
+    "errorCreatingPayment": "Erreur lors de la création du paiement",
     "plans": {
       "free": {
         "name": "Gratuit",
@@ -146,23 +154,133 @@
     }
   },
   "dashboard": {
-    "welcome": "Bon retour",
+    "welcome": "Bonjour",
     "welcomeGuest": "Bienvenue",
     "subtitle": "Continue ta progression et atteins tes objectifs.",
+    "goalsInProgress": "tu as {{count}} objectifs en cours.",
     "quickActions": "Actions rapides",
-    "recentActivity": "Activité récente",
-    "studyTime": "Temps d'étude",
+    "recentActivity": "Activités récentes",
+    "studyTime": "Heures étudiées",
     "quizzesCompleted": "Quiz complétés",
     "cardsReviewed": "Cartes révisées",
-    "streak": "Série en cours"
+    "streak": "Série en cours",
+    "notesCreated": "Notes créées",
+    "weeklyProgress": "Progression hebdomadaire",
+    "viewDetails": "Voir détails",
+    "thisWeek": "Cette semaine",
+    "vsLastWeek": "vs semaine dernière",
+    "viewHistory": "Voir tout l'historique",
+    "continueLearning": "Continue ton cours de",
+    "chapterProgress": "Chapitre {{chapter}} : {{title}} — {{progress}}% complété",
+    "continue": "Continuer",
+    "days": {
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam",
+      "sun": "Dim"
+    },
+    "actions": {
+      "chatAI": "Chat IA",
+      "chatAIDesc": "Pose une question",
+      "snapSolve": "Snap & Solve",
+      "snapSolveDesc": "Résous un exercice",
+      "newQuiz": "Nouveau Quiz",
+      "newQuizDesc": "Teste tes connaissances",
+      "comics": "Cours en BD",
+      "comicsDesc": "Apprends visuellement"
+    }
   },
   "chat": {
-    "title": "Chat IA",
+    "title": "Assistant IA",
     "subtitle": "Ton assistant personnel pour les révisions",
     "placeholder": "Pose ta question...",
     "send": "Envoyer",
-    "thinking": "Réflexion en cours...",
-    "suggestions": "Suggestions"
+    "thinking": "En train de réfléchir...",
+    "suggestions": "Suggestions pour commencer :",
+    "online": "En ligne",
+    "readyToHelp": "Prêt à t'aider",
+    "messages": "messages",
+    "welcomeMessage": "Bonjour ! 👋 Je suis ton assistant IA pédagogique. Comment puis-je t'aider dans ton apprentissage aujourd'hui ?",
+    "errorMessage": "Désolé, une erreur s'est produite. Veuillez réessayer. 🙁",
+    "errorTitle": "Erreur",
+    "errorDescription": "Impossible de contacter l'assistant IA. Réessayez.",
+    "poweredByAI": "Propulsé par l'IA • Les réponses peuvent contenir des erreurs",
+    "suggestionItems": {
+      "derivatives": "Explique-moi les dérivées",
+      "frenchRevolution": "Quiz sur la révolution française",
+      "summarize": "Résume ce chapitre",
+      "helpExercise": "Aide-moi avec cet exercice"
+    }
+  },
+  "notes": {
+    "title": "Notes & Synthèses",
+    "subtitle": "Organisation intelligente de tes cours",
+    "newNote": "Nouvelle note",
+    "allNotes": "Toutes les notes",
+    "synthesis": "Synthèses",
+    "aiSynthesis": "Synthèse IA",
+    "manual": "Manuel",
+    "generateSynthesis": "Générer une synthèse",
+    "generateSynthesisDesc": "Importe une image de ton cours et l'IA créera une synthèse structurée.",
+    "subject": "Matière",
+    "subjects": {
+      "all": "Tous",
+      "mathematics": "Mathématiques",
+      "history": "Histoire",
+      "biology": "Biologie",
+      "physics": "Physique",
+      "french": "Français",
+      "general": "Général"
+    },
+    "noNotes": "Aucune note trouvée",
+    "generateWithAI": "Générer avec l'IA",
+    "createNote": "Créer une note manuellement",
+    "title_field": "Titre",
+    "titlePlaceholder": "Titre de la note",
+    "content": "Contenu",
+    "contentPlaceholder": "Contenu de la note...",
+    "tags": "Tags (séparés par des virgules)",
+    "tagsPlaceholder": "Calcul, Analyse, ...",
+    "createNoteBtn": "Créer la note",
+    "editNote": "Modifier la note",
+    "saveBtn": "Enregistrer",
+    "deleteNote": "Supprimer",
+    "noContent": "Aucun contenu",
+    "aiGenerated": "IA",
+    "aiSynthesisLabel": "Synthèse IA",
+    "selectImage": "Sélectionne une image de ton cours",
+    "synthesisSuccess": "Synthèse générée avec succès !",
+    "generationError": "Erreur lors de la génération"
+  },
+  "comics": {
+    "title": "Cours en BD",
+    "subtitle": "Apprends des concepts complexes grâce à des bandes dessinées éducatives générées par l'IA.",
+    "generateWithAI": "Générer avec IA",
+    "generateTitle": "Génère ta propre BD avec l'IA",
+    "generateDesc": "Importe une image de ton cours et l'IA créera une BD éducative personnalisée.",
+    "generateDialogTitle": "Générer une BD avec l'IA",
+    "generateDialogDesc": "Importe une image de ton cours et l'IA créera une BD éducative pour t'aider à apprendre.",
+    "subject": "Matière",
+    "panels": "Panels",
+    "panelsCount": "{{count}} panels",
+    "generateBtn": "Générer la BD",
+    "yourComics": "Tes BD",
+    "noComics": "Aucune BD",
+    "noComicsDesc": "Importe une image de ton cours et l'IA créera une BD éducative",
+    "selectImage": "Sélectionne une image de ton cours",
+    "success": "BD générée avec succès ! 🎨",
+    "error": "Erreur lors de la génération",
+    "subjects": {
+      "biology": "Biologie",
+      "history": "Histoire",
+      "mathematics": "Mathématiques",
+      "physics": "Physique",
+      "french": "Français",
+      "general": "Général"
+    }
   },
   "snapSolve": {
     "title": "Snap & Solve",
@@ -171,13 +289,6 @@
     "camera": "Utiliser la caméra",
     "dragDrop": "Glisse-dépose ton fichier ici",
     "analyzing": "Analyse en cours..."
-  },
-  "notes": {
-    "title": "Notes & Synthèses",
-    "subtitle": "Organise tes cours intelligemment",
-    "newNote": "Nouvelle note",
-    "allNotes": "Toutes les notes",
-    "synthesis": "Synthèses"
   },
   "profile": {
     "title": "Mon Profil",
@@ -197,5 +308,11 @@
     "fr": "Français",
     "en": "English",
     "ar": "العربية"
+  },
+  "time": {
+    "ago": "Il y a",
+    "hours": "h",
+    "yesterday": "Hier",
+    "daysAgo": "Il y a {{count}} jours"
   }
 }
