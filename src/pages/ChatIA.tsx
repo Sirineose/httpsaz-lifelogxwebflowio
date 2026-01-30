@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, User, Paperclip, Mic, MoreHorizontal, Copy, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
+import { Send, Sparkles, User, Paperclip, Mic, Copy, ThumbsUp, ThumbsDown, Loader2, MessageSquare, Zap, BookOpen, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,10 +24,10 @@ const initialMessages: Message[] = [
 ];
 
 const suggestions = [
-  "Explique-moi les dérivées",
-  "Quiz sur la révolution française",
-  "Résume ce chapitre",
-  "Aide-moi avec cet exercice",
+  { icon: BookOpen, text: "Explique-moi les dérivées", color: "text-primary" },
+  { icon: MessageSquare, text: "Quiz sur la révolution française", color: "text-info" },
+  { icon: Zap, text: "Résume ce chapitre", color: "text-warning" },
+  { icon: HelpCircle, text: "Aide-moi avec cet exercice", color: "text-success" },
 ];
 
 export default function ChatIA() {
@@ -62,18 +62,15 @@ export default function ChatIA() {
     setInput("");
     setIsTyping(true);
 
-    // Guest mode check - guests now have full access
     const isGuest = !user && localStorage.getItem('prago_guest_mode') === 'true';
 
     try {
-      // Prepare messages for API (excluding the initial greeting)
       const apiMessages = messages
         .filter((m) => m.id !== "1")
         .map((m) => ({ role: m.role, content: m.content }));
       
       apiMessages.push({ role: "user", content: currentInput });
 
-      // Use direct fetch for guests (no auth header), invoke for authenticated users
       let data;
       if (isGuest) {
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`, {
@@ -105,7 +102,6 @@ export default function ChatIA() {
         description: "Impossible de contacter l'assistant IA. Réessayez.",
         variant: "destructive",
       });
-      // Add error message
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -139,101 +135,115 @@ export default function ChatIA() {
   };
 
   return (
-    <div className="h-[calc(100vh-7rem)] flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+    <div className="h-[calc(100vh-7rem)] flex flex-col max-w-5xl mx-auto">
+      {/* Premium Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between pb-6 mb-2"
+      >
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-2xl prago-gradient-bg flex items-center justify-center shadow-lg">
+              <Sparkles className="w-7 h-7 text-white" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-background" />
           </div>
           <div>
-            <h1 className="font-display font-semibold">Chat IA Pédagogique</h1>
-            <p className="text-xs text-muted-foreground">
-              Propulsé par l'IA
+            <h1 className="font-display text-xl font-bold">Assistant IA</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              En ligne • Prêt à t'aider
             </p>
           </div>
         </div>
-        <button className="p-2 rounded-xl hover:bg-secondary transition-colors">
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-      </div>
+        <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50">
+          <Zap className="w-4 h-4 text-warning" />
+          <span className="text-sm font-medium">{messages.length - 1} messages</span>
+        </div>
+      </motion.div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6">
+      {/* Messages Area with Glass Effect */}
+      <div className="flex-1 overflow-y-auto py-4 space-y-4 px-2">
         <AnimatePresence mode="popLayout">
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <motion.div
               key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: index * 0.05 }}
               className={cn("flex gap-3", message.role === "user" && "justify-end")}
             >
               {message.role === "assistant" && (
-                <div className="w-8 h-8 rounded-lg prago-gradient-bg flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-white" />
+                <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
               )}
-              <div
-                className={cn(
-                  "max-w-[85%] md:max-w-[70%]",
-                  message.role === "user" ? "order-first" : ""
-                )}
-              >
+              <div className={cn("max-w-[85%] md:max-w-[75%]", message.role === "user" && "order-first")}>
                 <div
                   className={cn(
+                    "rounded-2xl px-5 py-3.5 shadow-sm",
                     message.role === "user"
-                      ? "prago-chat-bubble-user"
-                      : "prago-chat-bubble-ai"
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-card border border-border rounded-bl-md"
                   )}
                 >
                   {message.role === "assistant" ? (
-                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none leading-relaxed">
                       <ReactMarkdown>{message.content}</ReactMarkdown>
                     </div>
                   ) : (
-                    <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                    <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</div>
                   )}
                 </div>
                 {message.role === "assistant" && message.id !== "1" && (
-                  <div className="flex items-center gap-2 mt-2 ml-1">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center gap-1 mt-2 ml-2"
+                  >
                     <button 
                       onClick={() => copyToClipboard(message.content)}
-                      className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                      className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
-                    <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+                    <button className="p-2 rounded-lg hover:bg-success/10 transition-colors text-muted-foreground hover:text-success">
                       <ThumbsUp className="w-3.5 h-3.5" />
                     </button>
-                    <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+                    <button className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive">
                       <ThumbsDown className="w-3.5 h-3.5" />
                     </button>
-                  </div>
+                  </motion.div>
                 )}
               </div>
               {message.role === "user" && (
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-muted-foreground" />
                 </div>
               )}
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {/* Typing indicator */}
         {isTyping && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex gap-3"
           >
-            <div className="w-8 h-8 rounded-lg prago-gradient-bg flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center flex-shrink-0 shadow-md">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <div className="prago-chat-bubble-ai">
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="bg-card border border-border rounded-2xl rounded-bl-md px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
                 <span className="text-sm text-muted-foreground">En train de réfléchir...</span>
               </div>
             </div>
@@ -243,61 +253,79 @@ export default function ChatIA() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestions */}
+      {/* Premium Suggestions Grid */}
       {messages.length <= 1 && (
-        <div className="pb-4">
-          <p className="text-sm text-muted-foreground mb-3">Suggestions :</p>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => handleSuggestion(suggestion)}
-                className="px-3 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-sm transition-colors"
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="pb-4"
+        >
+          <p className="text-sm font-medium text-muted-foreground mb-3">Suggestions pour commencer :</p>
+          <div className="grid grid-cols-2 gap-3">
+            {suggestions.map((suggestion, index) => (
+              <motion.button
+                key={suggestion.text}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + index * 0.1 }}
+                onClick={() => handleSuggestion(suggestion.text)}
+                className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 hover:bg-secondary/50 transition-all text-left group"
               >
-                {suggestion}
-              </button>
+                <div className={cn("p-2 rounded-lg bg-secondary group-hover:scale-110 transition-transform", suggestion.color)}>
+                  <suggestion.icon className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium">{suggestion.text}</span>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Input */}
-      <div className="pt-4 border-t border-border">
-        <div className="prago-card flex items-end gap-2 p-2">
-          <button className="p-2.5 rounded-xl hover:bg-secondary transition-colors text-muted-foreground">
-            <Paperclip className="w-5 h-5" />
-          </button>
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Pose ta question..."
-            rows={1}
-            disabled={isTyping}
-            className="flex-1 bg-transparent border-0 resize-none text-sm placeholder:text-muted-foreground focus:outline-none py-2.5 max-h-32 disabled:opacity-50"
-            style={{ minHeight: "44px" }}
-          />
-          <button className="p-2.5 rounded-xl hover:bg-secondary transition-colors text-muted-foreground">
-            <Mic className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isTyping}
-            className={cn(
-              "p-2.5 rounded-xl transition-all",
-              input.trim() && !isTyping
-                ? "prago-gradient-bg text-white hover:opacity-90"
-                : "bg-secondary text-muted-foreground"
-            )}
-          >
-            <Send className="w-5 h-5" />
-          </button>
+      {/* Premium Input Area */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="pt-4 border-t border-border"
+      >
+        <div className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
+          <div className="flex items-end gap-2 p-3">
+            <button className="p-2.5 rounded-xl hover:bg-secondary transition-colors text-muted-foreground hover:text-primary">
+              <Paperclip className="w-5 h-5" />
+            </button>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Pose ta question..."
+              rows={1}
+              disabled={isTyping}
+              className="flex-1 bg-transparent border-0 resize-none text-sm placeholder:text-muted-foreground focus:outline-none py-2.5 max-h-32 disabled:opacity-50"
+              style={{ minHeight: "44px" }}
+            />
+            <button className="p-2.5 rounded-xl hover:bg-secondary transition-colors text-muted-foreground hover:text-primary">
+              <Mic className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isTyping}
+              className={cn(
+                "p-3 rounded-xl transition-all",
+                input.trim() && !isTyping
+                  ? "prago-gradient-bg text-white shadow-lg hover:shadow-xl hover:scale-105"
+                  : "bg-secondary text-muted-foreground"
+              )}
+            >
+              {isTyping ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-2">
-          PRAGO peut faire des erreurs. Vérifie les informations importantes.
+        <p className="text-xs text-muted-foreground text-center mt-3 flex items-center justify-center gap-2">
+          <Sparkles className="w-3 h-3" />
+          Propulsé par l'IA • Les réponses peuvent contenir des erreurs
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

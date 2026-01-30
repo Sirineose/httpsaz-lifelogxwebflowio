@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Target, Clock, BookOpen, ChevronRight, Plus, CheckCircle2, Circle, Loader2, Trash2, X, Sparkles, BarChart3 } from "lucide-react";
+import { Calendar, Target, Clock, BookOpen, ChevronRight, Plus, CheckCircle2, Circle, Loader2, Trash2, X, Sparkles, GraduationCap, TrendingUp, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useExams, useStudySessions, Exam, ExamTopic, StudySession } from "@/hooks/useExams";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,21 +17,17 @@ export default function ExamPrep() {
   const { exams, loading, createExam, updateExam, deleteExam } = useExams();
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const { sessions, createSession, updateSession, refetch: refetchSessions } = useStudySessions(selectedExam?.id);
-  
-  // All sessions for stats
   const { sessions: allSessions } = useStudySessions();
   
   const [isCreateExamOpen, setIsCreateExamOpen] = useState(false);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Exam form
   const [examTitle, setExamTitle] = useState("");
   const [examSubject, setExamSubject] = useState("Mathématiques");
   const [examDate, setExamDate] = useState("");
   const [examTopics, setExamTopics] = useState<string[]>([""]);
   
-  // Session form
   const [sessionStartTime, setSessionStartTime] = useState("09:00");
   const [sessionEndTime, setSessionEndTime] = useState("10:30");
   const [sessionSubject, setSessionSubject] = useState("");
@@ -40,7 +36,6 @@ export default function ExamPrep() {
   
   const [isSaving, setIsSaving] = useState(false);
 
-  // Auto-select first exam
   useEffect(() => {
     if (exams.length > 0 && !selectedExam) {
       setSelectedExam(exams[0]);
@@ -129,7 +124,7 @@ export default function ExamPrep() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -138,100 +133,73 @@ export default function ExamPrep() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-8"
     >
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
-            Préparation aux Examens
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Planifie et suis ta préparation pour réussir tes examens
-          </p>
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl prago-gradient-bg flex items-center justify-center shadow-lg">
+            <GraduationCap className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl font-bold">Préparation Examens</h1>
+            <p className="text-muted-foreground">Planifie et réussis tes examens avec l'IA</p>
+          </div>
         </div>
         <Dialog open={isCreateExamOpen} onOpenChange={setIsCreateExamOpen}>
           <DialogTrigger asChild>
-            <button className="prago-btn-primary flex items-center gap-2 w-fit">
+            <button className="prago-btn-primary flex items-center gap-2 w-fit shadow-lg">
               <Plus className="w-4 h-4" />
               Ajouter un examen
             </button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Ajouter un examen</DialogTitle>
+              <DialogTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                Ajouter un examen
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Titre</label>
-                <input
-                  type="text"
-                  value={examTitle}
-                  onChange={(e) => setExamTitle(e.target.value)}
-                  className="prago-input w-full"
-                  placeholder="Contrôle de Mathématiques"
-                />
+                <label className="text-sm font-medium mb-2 block">Titre</label>
+                <input type="text" value={examTitle} onChange={(e) => setExamTitle(e.target.value)} className="prago-input w-full" placeholder="Contrôle de Mathématiques" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Matière</label>
-                <select
-                  value={examSubject}
-                  onChange={(e) => setExamSubject(e.target.value)}
-                  className="prago-input w-full"
-                >
-                  {subjects.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
+                <label className="text-sm font-medium mb-2 block">Matière</label>
+                <select value={examSubject} onChange={(e) => setExamSubject(e.target.value)} className="prago-input w-full">
+                  {subjects.map((s) => (<option key={s} value={s}>{s}</option>))}
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Date de l'examen</label>
-                <input
-                  type="date"
-                  value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
-                  className="prago-input w-full"
-                />
+                <label className="text-sm font-medium mb-2 block">Date de l'examen</label>
+                <input type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} className="prago-input w-full" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Chapitres à réviser</label>
+                <label className="text-sm font-medium mb-2 block">Chapitres à réviser</label>
                 <div className="space-y-2">
                   {examTopics.map((topic, index) => (
                     <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={topic}
-                        onChange={(e) => {
-                          const newTopics = [...examTopics];
-                          newTopics[index] = e.target.value;
-                          setExamTopics(newTopics);
-                        }}
-                        className="prago-input flex-1"
-                        placeholder={`Chapitre ${index + 1}`}
-                      />
+                      <input type="text" value={topic} onChange={(e) => {
+                        const newTopics = [...examTopics];
+                        newTopics[index] = e.target.value;
+                        setExamTopics(newTopics);
+                      }} className="prago-input flex-1" placeholder={`Chapitre ${index + 1}`} />
                       {examTopics.length > 1 && (
-                        <button
-                          onClick={() => setExamTopics(examTopics.filter((_, i) => i !== index))}
-                          className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"
-                        >
+                        <button onClick={() => setExamTopics(examTopics.filter((_, i) => i !== index))} className="p-2 text-destructive hover:bg-destructive/10 rounded-xl">
                           <X className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
-                <button
-                  onClick={() => setExamTopics([...examTopics, ""])}
-                  className="text-sm text-primary hover:underline mt-2"
-                >
+                <button onClick={() => setExamTopics([...examTopics, ""])} className="text-sm text-primary hover:underline mt-2">
                   + Ajouter un chapitre
                 </button>
               </div>
-              <button
-                onClick={handleCreateExam}
-                disabled={!examTitle.trim() || !examDate || isSaving}
-                className="prago-btn-primary w-full flex items-center justify-center gap-2"
-              >
+              <button onClick={handleCreateExam} disabled={!examTitle.trim() || !examDate || isSaving} className="prago-btn-primary w-full flex items-center justify-center gap-2">
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Créer l'examen
               </button>
@@ -241,38 +209,41 @@ export default function ExamPrep() {
       </div>
 
       {exams.length === 0 ? (
-        <div className="prago-card p-12 text-center">
-          <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-display text-lg font-semibold mb-2">Aucun examen</h3>
-          <p className="text-muted-foreground text-sm mb-4">
-            Ajoute ton premier examen pour commencer à planifier tes révisions
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-card border border-border rounded-3xl p-12 text-center"
+        >
+          <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mx-auto mb-6">
+            <Calendar className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h3 className="font-display text-xl font-bold mb-2">Aucun examen</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+            Ajoute ton premier examen pour commencer à planifier tes révisions avec l'aide de l'IA
           </p>
-          <button 
-            onClick={() => setIsCreateExamOpen(true)}
-            className="prago-btn-primary"
-          >
+          <button onClick={() => setIsCreateExamOpen(true)} className="prago-btn-primary shadow-lg">
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un examen
           </button>
-        </div>
+        </motion.div>
       ) : (
         <>
           {/* Stats Overview */}
           <ExamStats exams={exams} sessions={allSessions} selectedExam={selectedExam} />
 
-          {/* Tabs Navigation */}
+          {/* Premium Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
-              <TabsTrigger value="overview" className="gap-2">
+            <TabsList className="bg-card border border-border p-1.5 rounded-2xl inline-flex shadow-sm">
+              <TabsTrigger value="overview" className="gap-2 rounded-xl data-[state=active]:prago-gradient-bg data-[state=active]:text-white">
                 <Target className="w-4 h-4" />
                 <span className="hidden sm:inline">Vue d'ensemble</span>
                 <span className="sm:hidden">Exams</span>
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="gap-2">
+              <TabsTrigger value="calendar" className="gap-2 rounded-xl data-[state=active]:prago-gradient-bg data-[state=active]:text-white">
                 <Calendar className="w-4 h-4" />
                 Calendrier
               </TabsTrigger>
-              <TabsTrigger value="ai-planning" className="gap-2">
+              <TabsTrigger value="ai-planning" className="gap-2 rounded-xl data-[state=active]:prago-gradient-bg data-[state=active]:text-white">
                 <Sparkles className="w-4 h-4" />
                 <span className="hidden sm:inline">Planning IA</span>
                 <span className="sm:hidden">IA</span>
@@ -284,39 +255,48 @@ export default function ExamPrep() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Exams List */}
                 <div className="lg:col-span-1 space-y-4">
-                  <h2 className="font-display font-semibold">Examens à venir</h2>
-                  {exams.map((exam) => {
+                  <h2 className="font-display font-bold text-lg flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Examens à venir
+                  </h2>
+                  {exams.map((exam, index) => {
                     const daysLeft = getDaysLeft(exam.exam_date);
                     return (
-                      <button
+                      <motion.button
                         key={exam.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
                         onClick={() => setSelectedExam(exam)}
                         className={cn(
-                          "w-full text-left p-4 rounded-xl transition-all",
+                          "w-full text-left p-5 rounded-2xl transition-all border",
                           selectedExam?.id === exam.id
-                            ? "prago-card border-primary/30 ring-2 ring-primary/20"
-                            : "prago-card hover:border-primary/20"
+                            ? "bg-card border-primary/30 shadow-lg ring-2 ring-primary/10"
+                            : "bg-card border-border hover:border-primary/20 hover:shadow-md"
                         )}
                       >
-                        <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex items-start justify-between gap-3 mb-4">
                           <div>
-                            <h3 className="font-medium mb-1">{exam.title}</h3>
+                            <h3 className="font-semibold mb-1">{exam.title}</h3>
                             <p className="text-sm text-muted-foreground">{exam.subject}</p>
                           </div>
-                          <span
-                            className={cn(
-                              "prago-badge",
-                              daysLeft <= 3 ? "prago-badge-warning" : daysLeft <= 7 ? "prago-badge-info" : "prago-badge-primary"
-                            )}
-                          >
+                          <span className={cn(
+                            "px-3 py-1 rounded-full text-xs font-bold",
+                            daysLeft <= 3 ? "bg-destructive/10 text-destructive" : daysLeft <= 7 ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary"
+                          )}>
                             {daysLeft}j
                           </span>
                         </div>
-                        <div className="prago-progress">
-                          <div className="prago-progress-bar" style={{ width: `${exam.progress}%` }} />
+                        <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                          <motion.div 
+                            className="h-full prago-gradient-bg"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${exam.progress}%` }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                          />
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">{exam.progress}% préparé</p>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -326,194 +306,173 @@ export default function ExamPrep() {
                   {selectedExam ? (
                     <>
                       {/* Exam Info Card */}
-                      <div className="prago-card p-6">
-                        <div className="flex items-start justify-between mb-6">
-                          <div>
-                            <h2 className="font-display text-xl font-semibold mb-1">{selectedExam.title}</h2>
-                            <p className="text-muted-foreground">{selectedExam.subject}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <p className="text-2xl font-bold prago-gradient-text">{getDaysLeft(selectedExam.exam_date)}</p>
-                              <p className="text-sm text-muted-foreground">jours restants</p>
+                      <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-xl">
+                        <div className="p-6 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h2 className="font-display text-xl font-bold mb-1">{selectedExam.title}</h2>
+                              <p className="text-muted-foreground">{selectedExam.subject}</p>
                             </div>
-                            <button
-                              onClick={() => { deleteExam(selectedExam.id); setSelectedExam(null); }}
-                              className="p-2 rounded-lg hover:bg-destructive/10 text-destructive"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4 mb-6">
-                          <div className="p-4 rounded-xl bg-secondary/50">
-                            <Calendar className="w-5 h-5 text-primary mb-2" />
-                            <p className="text-sm font-medium">{formatExamDate(selectedExam.exam_date)}</p>
-                            <p className="text-xs text-muted-foreground">Date de l'examen</p>
-                          </div>
-                          <div className="p-4 rounded-xl bg-secondary/50">
-                            <Target className="w-5 h-5 text-success mb-2" />
-                            <p className="text-sm font-medium">{selectedExam.progress}%</p>
-                            <p className="text-xs text-muted-foreground">Progression</p>
-                          </div>
-                          <div className="p-4 rounded-xl bg-secondary/50">
-                            <BookOpen className="w-5 h-5 text-info mb-2" />
-                            <p className="text-sm font-medium">{selectedExam.topics.filter(t => t.completed).length} / {selectedExam.topics.length}</p>
-                            <p className="text-xs text-muted-foreground">Chapitres</p>
-                          </div>
-                        </div>
-
-                        <h3 className="font-medium mb-3">Chapitres à réviser</h3>
-                        {selectedExam.topics.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Aucun chapitre défini</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {selectedExam.topics.map((topic, index) => (
-                              <button
-                                key={index}
-                                onClick={() => toggleTopicComplete(selectedExam, index)}
-                                className={cn(
-                                  "w-full flex items-center justify-between p-3 rounded-xl transition-colors",
-                                  topic.completed ? "bg-success/10" : "bg-secondary/50 hover:bg-secondary"
-                                )}
-                              >
-                                <div className="flex items-center gap-3">
-                                  {topic.completed ? (
-                                    <CheckCircle2 className="w-5 h-5 text-success" />
-                                  ) : (
-                                    <Circle className="w-5 h-5 text-muted-foreground" />
-                                  )}
-                                  <span className={cn("text-sm", topic.completed && "line-through text-muted-foreground")}>
-                                    {topic.name}
-                                  </span>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className="text-3xl font-bold prago-gradient-text">{getDaysLeft(selectedExam.exam_date)}</p>
+                                <p className="text-xs text-muted-foreground">jours restants</p>
+                              </div>
+                              <button onClick={() => { deleteExam(selectedExam.id); setSelectedExam(null); }} className="p-2 rounded-xl hover:bg-destructive/10 text-destructive">
+                                <Trash2 className="w-5 h-5" />
                               </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-6">
+                          <div className="grid grid-cols-3 gap-4 mb-6">
+                            {[
+                              { icon: Calendar, label: "Date", value: formatExamDate(selectedExam.exam_date), color: "text-primary", bg: "bg-primary/10" },
+                              { icon: Target, label: "Progression", value: `${selectedExam.progress}%`, color: "text-success", bg: "bg-success/10" },
+                              { icon: BookOpen, label: "Chapitres", value: `${selectedExam.topics.filter(t => t.completed).length}/${selectedExam.topics.length}`, color: "text-info", bg: "bg-info/10" },
+                            ].map((stat) => (
+                              <div key={stat.label} className="p-4 rounded-2xl bg-secondary/30">
+                                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", stat.bg)}>
+                                  <stat.icon className={cn("w-5 h-5", stat.color)} />
+                                </div>
+                                <p className="text-lg font-bold">{stat.value}</p>
+                                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                              </div>
                             ))}
                           </div>
-                        )}
+
+                          <h3 className="font-semibold mb-4 flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-warning" />
+                            Chapitres à réviser
+                          </h3>
+                          {selectedExam.topics.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Aucun chapitre défini</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {selectedExam.topics.map((topic, index) => (
+                                <motion.button
+                                  key={index}
+                                  whileHover={{ scale: 1.01 }}
+                                  whileTap={{ scale: 0.99 }}
+                                  onClick={() => toggleTopicComplete(selectedExam, index)}
+                                  className={cn(
+                                    "w-full flex items-center justify-between p-4 rounded-2xl transition-all border",
+                                    topic.completed ? "bg-success/10 border-success/20" : "bg-secondary/30 border-transparent hover:border-primary/20"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {topic.completed ? (
+                                      <div className="w-8 h-8 rounded-lg bg-success flex items-center justify-center">
+                                        <CheckCircle2 className="w-5 h-5 text-white" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                                        <Circle className="w-5 h-5 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    <span className={cn("font-medium", topic.completed && "line-through text-muted-foreground")}>
+                                      {topic.name}
+                                    </span>
+                                  </div>
+                                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                </motion.button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Today's Sessions */}
-                      <div className="prago-card p-6">
+                      <div className="bg-card border border-border rounded-3xl p-6 shadow-xl">
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="font-display font-semibold">Sessions du jour</h3>
+                          <h3 className="font-display font-bold flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-info" />
+                            Sessions du jour
+                          </h3>
                           <Dialog open={isCreateSessionOpen} onOpenChange={setIsCreateSessionOpen}>
                             <DialogTrigger asChild>
-                              <button className="text-sm text-primary hover:underline">+ Ajouter</button>
+                              <button className="prago-btn-secondary text-sm">
+                                <Plus className="w-4 h-4 mr-1" />
+                                Ajouter
+                              </button>
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Ajouter une session d'étude</DialogTitle>
+                                <DialogTitle>Ajouter une session</DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4 mt-4">
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <label className="text-sm font-medium mb-1 block">Début</label>
-                                    <input
-                                      type="time"
-                                      value={sessionStartTime}
-                                      onChange={(e) => setSessionStartTime(e.target.value)}
-                                      className="prago-input w-full"
-                                    />
+                                    <label className="text-sm font-medium mb-2 block">Début</label>
+                                    <input type="time" value={sessionStartTime} onChange={(e) => setSessionStartTime(e.target.value)} className="prago-input w-full" />
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium mb-1 block">Fin</label>
-                                    <input
-                                      type="time"
-                                      value={sessionEndTime}
-                                      onChange={(e) => setSessionEndTime(e.target.value)}
-                                      className="prago-input w-full"
-                                    />
+                                    <label className="text-sm font-medium mb-2 block">Fin</label>
+                                    <input type="time" value={sessionEndTime} onChange={(e) => setSessionEndTime(e.target.value)} className="prago-input w-full" />
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium mb-1 block">Date</label>
-                                  <input
-                                    type="date"
-                                    value={sessionDate}
-                                    onChange={(e) => setSessionDate(e.target.value)}
-                                    className="prago-input w-full"
-                                  />
+                                  <label className="text-sm font-medium mb-2 block">Date</label>
+                                  <input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} className="prago-input w-full" />
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium mb-1 block">Matière</label>
-                                  <input
-                                    type="text"
-                                    value={sessionSubject}
-                                    onChange={(e) => setSessionSubject(e.target.value)}
-                                    className="prago-input w-full"
-                                    placeholder="Mathématiques"
-                                  />
+                                  <label className="text-sm font-medium mb-2 block">Matière</label>
+                                  <input type="text" value={sessionSubject} onChange={(e) => setSessionSubject(e.target.value)} className="prago-input w-full" placeholder="Mathématiques" />
                                 </div>
                                 <div>
-                                  <label className="text-sm font-medium mb-1 block">Sujet</label>
-                                  <input
-                                    type="text"
-                                    value={sessionTopic}
-                                    onChange={(e) => setSessionTopic(e.target.value)}
-                                    className="prago-input w-full"
-                                    placeholder="Équations différentielles"
-                                  />
+                                  <label className="text-sm font-medium mb-2 block">Sujet</label>
+                                  <input type="text" value={sessionTopic} onChange={(e) => setSessionTopic(e.target.value)} className="prago-input w-full" placeholder="Chapitre 1 - Dérivées" />
                                 </div>
-                                <button
-                                  onClick={handleCreateSession}
-                                  disabled={!sessionSubject.trim() || !sessionTopic.trim() || isSaving}
-                                  className="prago-btn-primary w-full flex items-center justify-center gap-2"
-                                >
+                                <button onClick={handleCreateSession} disabled={!sessionSubject.trim() || !sessionTopic.trim() || isSaving} className="prago-btn-primary w-full flex items-center justify-center gap-2">
                                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                  Ajouter
+                                  Créer la session
                                 </button>
                               </div>
                             </DialogContent>
                           </Dialog>
                         </div>
+                        
                         {todaySessions.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-6">
-                            Aucune session prévue aujourd'hui
-                          </p>
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                              <Clock className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                            <p className="text-sm text-muted-foreground">Aucune session prévue aujourd'hui</p>
+                          </div>
                         ) : (
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             {todaySessions.map((session) => (
-                              <div
+                              <motion.button
                                 key={session.id}
+                                whileHover={{ scale: 1.01 }}
+                                onClick={() => toggleSessionComplete(session)}
                                 className={cn(
-                                  "flex items-center gap-4 p-3 rounded-xl",
-                                  session.completed ? "bg-success/10" : "bg-secondary/50"
+                                  "w-full flex items-center justify-between p-4 rounded-2xl transition-all border",
+                                  session.completed ? "bg-success/10 border-success/20" : "bg-secondary/30 border-transparent hover:border-primary/20"
                                 )}
                               >
-                                <div className="flex items-center gap-2 text-muted-foreground w-32 flex-shrink-0">
-                                  <Clock className="w-4 h-4" />
-                                  <span className="text-xs">{session.start_time.slice(0, 5)} - {session.end_time.slice(0, 5)}</span>
+                                <div className="flex items-center gap-3">
+                                  {session.completed ? <CheckCircle2 className="w-5 h-5 text-success" /> : <Circle className="w-5 h-5 text-muted-foreground" />}
+                                  <div className="text-left">
+                                    <p className={cn("font-medium", session.completed && "line-through text-muted-foreground")}>{session.topic}</p>
+                                    <p className="text-xs text-muted-foreground">{session.subject}</p>
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{session.subject}</p>
-                                  <p className="text-xs text-muted-foreground truncate">{session.topic}</p>
-                                </div>
-                                {session.completed ? (
-                                  <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
-                                ) : (
-                                  <button 
-                                    onClick={() => toggleSessionComplete(session)}
-                                    className="prago-btn-ghost text-xs py-1 px-3"
-                                  >
-                                    Terminer
-                                  </button>
-                                )}
-                              </div>
+                                <span className="text-sm text-muted-foreground">{session.start_time.slice(0, 5)} - {session.end_time.slice(0, 5)}</span>
+                              </motion.button>
                             ))}
                           </div>
                         )}
                       </div>
                     </>
                   ) : (
-                    <div className="prago-card p-12 text-center">
-                      <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="font-display text-lg font-semibold mb-2">Sélectionne un examen</h3>
-                      <p className="text-muted-foreground text-sm">
-                        Choisis un examen dans la liste pour voir les détails
-                      </p>
+                    <div className="bg-card border border-border rounded-3xl p-12 text-center">
+                      <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mx-auto mb-6">
+                        <Target className="w-10 h-10 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-display font-bold text-lg mb-2">Sélectionne un examen</h3>
+                      <p className="text-sm text-muted-foreground">Clique sur un examen dans la liste pour voir les détails</p>
                     </div>
                   )}
                 </div>
@@ -522,26 +481,21 @@ export default function ExamPrep() {
 
             {/* Calendar Tab */}
             <TabsContent value="calendar">
-              <ExamCalendar 
-                sessions={sessions} 
-                onToggleComplete={toggleSessionComplete}
-              />
+              <ExamCalendar sessions={sessions} onToggleComplete={toggleSessionComplete} />
             </TabsContent>
 
             {/* AI Planning Tab */}
             <TabsContent value="ai-planning">
               {selectedExam ? (
-                <AIStudyPlanGenerator
-                  exam={selectedExam}
-                  onSessionsGenerated={handleBulkCreateSessions}
-                  existingSessions={sessions}
-                />
+                <AIStudyPlanGenerator exam={selectedExam} existingSessions={sessions} onSessionsGenerated={handleBulkCreateSessions} />
               ) : (
-                <div className="prago-card p-12 text-center">
-                  <Sparkles className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-display text-lg font-semibold mb-2">Sélectionne un examen</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Choisis un examen pour générer un planning de révision intelligent
+                <div className="bg-card border border-border rounded-3xl p-12 text-center">
+                  <div className="w-20 h-20 rounded-3xl prago-gradient-bg flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="font-display font-bold text-lg mb-2">Sélectionne un examen</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    Choisis un examen dans l'onglet "Vue d'ensemble" pour générer un planning de révision avec l'IA
                   </p>
                 </div>
               )}

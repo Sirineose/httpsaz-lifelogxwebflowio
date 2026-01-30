@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Camera, FileText, X, Sparkles, ArrowRight, Image as ImageIcon, Loader2, File } from "lucide-react";
+import { Upload, Camera, FileText, X, Sparkles, Image as ImageIcon, Loader2, File, Zap, CheckCircle2, ArrowRight, Target, Clock, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,12 @@ import ReactMarkdown from "react-markdown";
 
 type UploadState = "idle" | "uploading" | "analyzing" | "done";
 type FileType = "image" | "pdf";
+
+const features = [
+  { icon: Zap, label: "Résolution instantanée", color: "text-warning" },
+  { icon: Target, label: "Explications détaillées", color: "text-primary" },
+  { icon: Lightbulb, label: "Conseils personnalisés", color: "text-success" },
+];
 
 export default function SnapSolve() {
   const [uploadState, setUploadState] = useState<UploadState>("idle");
@@ -40,14 +46,11 @@ export default function SnapSolve() {
 
   const analyzeFile = async (fileBase64: string, type: FileType) => {
     setUploadState("uploading");
-    
-    // Guest mode check - guests now have full access
     const isGuest = !user && localStorage.getItem('prago_guest_mode') === 'true';
 
     try {
       setUploadState("analyzing");
       
-      // Use direct fetch for guests (no auth header), invoke for authenticated users
       let data;
       const requestBody = type === "pdf" 
         ? { pdfBase64: fileBase64, guestMode: isGuest }
@@ -99,74 +102,72 @@ export default function SnapSolve() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto"
+      className="max-w-5xl mx-auto"
     >
-      {/* Header */}
+      {/* Premium Header */}
       <div className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold mb-2">
-          Snap & Solve
-        </h1>
-        <p className="text-muted-foreground">
-          Prends une photo de ton exercice et obtiens la solution détaillée instantanément.
-        </p>
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 rounded-2xl prago-gradient-bg flex items-center justify-center shadow-lg">
+            <Camera className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl font-bold">Snap & Solve</h1>
+            <p className="text-muted-foreground">Résolution instantanée par IA</p>
+          </div>
+        </div>
+        
+        {/* Feature Pills */}
+        <div className="flex flex-wrap gap-2">
+          {features.map((feature) => (
+            <div key={feature.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 text-sm">
+              <feature.icon className={cn("w-4 h-4", feature.color)} />
+              <span>{feature.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Upload Area */}
         <div className="space-y-4">
           <AnimatePresence mode="wait">
             {!preview ? (
               <motion.div
                 key="upload"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
               >
                 {/* Hidden inputs */}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={(e) => handleFileChange(e, "image")}
-                  className="hidden"
-                />
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, "image")}
-                  className="hidden"
-                />
-                <input
-                  ref={pdfInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => handleFileChange(e, "pdf")}
-                  className="hidden"
-                />
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={(e) => handleFileChange(e, "image")} className="hidden" />
+                <input ref={imageInputRef} type="file" accept="image/*" onChange={(e) => handleFileChange(e, "image")} className="hidden" />
+                <input ref={pdfInputRef} type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, "pdf")} className="hidden" />
 
                 {/* Main upload area */}
                 <div
                   onClick={() => imageInputRef.current?.click()}
-                  className="prago-card prago-gradient-border block cursor-pointer group"
+                  className="relative overflow-hidden rounded-3xl border-2 border-dashed border-border hover:border-primary/50 bg-card cursor-pointer group transition-all"
                 >
-                  <div className="p-12 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                      <Upload className="w-8 h-8 text-primary" />
-                    </div>
-                    <h3 className="font-display font-semibold text-lg mb-2">
-                      Glisse ton fichier ici
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative p-12 text-center">
+                    <motion.div 
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className="w-20 h-20 rounded-3xl prago-gradient-bg flex items-center justify-center mx-auto mb-6 shadow-lg"
+                    >
+                      <Upload className="w-10 h-10 text-white" />
+                    </motion.div>
+                    <h3 className="font-display font-bold text-xl mb-2">
+                      Dépose ton exercice ici
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      ou clique pour parcourir
+                    <p className="text-sm text-muted-foreground mb-6">
+                      ou clique pour parcourir tes fichiers
                     </p>
-                    <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary">
                         <ImageIcon className="w-4 h-4" />
                         Images
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary">
                         <File className="w-4 h-4" />
                         PDF
                       </span>
@@ -174,74 +175,77 @@ export default function SnapSolve() {
                   </div>
                 </div>
 
-                {/* Quick Actions - 3 options */}
-                <div className="grid grid-cols-3 gap-3 mt-4">
-                  <button
-                    onClick={() => pdfInputRef.current?.click()}
-                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
-                  >
-                    <File className="w-6 h-6 mx-auto mb-2 text-destructive" />
-                    <span className="text-sm font-medium">PDF</span>
-                  </button>
-                  <button
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
-                  >
-                    <Camera className="w-6 h-6 mx-auto mb-2 text-primary" />
-                    <span className="text-sm font-medium">Photo</span>
-                  </button>
-                  <button
-                    onClick={() => imageInputRef.current?.click()}
-                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
-                  >
-                    <ImageIcon className="w-6 h-6 mx-auto mb-2 text-info" />
-                    <span className="text-sm font-medium">Galerie</span>
-                  </button>
+                {/* Quick Actions - Premium Cards */}
+                <div className="grid grid-cols-3 gap-4 mt-6">
+                  {[
+                    { icon: File, label: "PDF", color: "text-destructive", bg: "bg-destructive/10", onClick: () => pdfInputRef.current?.click() },
+                    { icon: Camera, label: "Photo", color: "text-primary", bg: "bg-primary/10", onClick: () => cameraInputRef.current?.click() },
+                    { icon: ImageIcon, label: "Galerie", color: "text-info", bg: "bg-info/10", onClick: () => imageInputRef.current?.click() },
+                  ].map((action) => (
+                    <motion.button
+                      key={action.label}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={action.onClick}
+                      className="bg-card border border-border rounded-2xl p-5 text-center hover:border-primary/30 hover:shadow-lg transition-all"
+                    >
+                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3", action.bg)}>
+                        <action.icon className={cn("w-6 h-6", action.color)} />
+                      </div>
+                      <span className="text-sm font-medium">{action.label}</span>
+                    </motion.button>
+                  ))}
                 </div>
               </motion.div>
             ) : (
               <motion.div
                 key="preview"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="prago-card overflow-hidden"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-card border border-border rounded-3xl overflow-hidden shadow-xl"
               >
                 <div className="relative">
                   {fileType === "pdf" ? (
-                    <div className="w-full aspect-[4/3] bg-secondary flex flex-col items-center justify-center gap-3">
-                      <File className="w-16 h-16 text-destructive" />
+                    <div className="w-full aspect-[4/3] bg-gradient-to-br from-destructive/10 to-destructive/5 flex flex-col items-center justify-center gap-4">
+                      <div className="w-20 h-20 rounded-2xl bg-destructive/20 flex items-center justify-center">
+                        <File className="w-10 h-10 text-destructive" />
+                      </div>
                       <p className="text-sm font-medium text-muted-foreground">{fileName}</p>
                     </div>
                   ) : (
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      className="w-full aspect-[4/3] object-cover"
-                    />
+                    <img src={preview} alt="Preview" className="w-full aspect-[4/3] object-cover" />
                   )}
                   <button
                     onClick={resetUpload}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                    className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors shadow-lg"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
                   {uploadState !== "done" && (
-                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center">
                       <div className="text-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-                        <p className="text-sm font-medium">
-                          {uploadState === "uploading" ? "Téléchargement..." : "Analyse en cours..."}
+                        <div className="w-16 h-16 rounded-2xl prago-gradient-bg flex items-center justify-center mx-auto mb-4 shadow-lg">
+                          <Loader2 className="w-8 h-8 animate-spin text-white" />
+                        </div>
+                        <p className="font-medium mb-1">
+                          {uploadState === "uploading" ? "Téléchargement..." : "Analyse IA en cours..."}
                         </p>
+                        <p className="text-sm text-muted-foreground">Cela prend quelques secondes</p>
                       </div>
                     </div>
                   )}
                 </div>
                 {uploadState === "done" && (
-                  <div className="p-4 border-t border-border">
-                    <div className="flex items-center gap-2 text-success">
-                      <Sparkles className="w-5 h-5" />
-                      <span className="text-sm font-medium">Analyse terminée</span>
+                  <div className="p-4 border-t border-border bg-success/5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-success/20 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-success" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-success">Analyse terminée !</p>
+                        <p className="text-xs text-muted-foreground">Solution générée avec succès</p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -258,36 +262,47 @@ export default function SnapSolve() {
                 key="solution"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="prago-card p-6"
+                className="bg-card border border-border rounded-3xl overflow-hidden shadow-xl"
               >
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
-                  <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-display font-semibold">Solution détaillée</h3>
-                    <p className="text-xs text-muted-foreground">Générée par Mistral AI</p>
+                <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl prago-gradient-bg flex items-center justify-center shadow-lg">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-lg">Solution détaillée</h3>
+                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Clock className="w-3 h-3" />
+                        Générée par l'IA
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
-                {extractedText && (
-                  <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Texte extrait :</p>
-                    <p className="text-sm">{extractedText.substring(0, 200)}{extractedText.length > 200 ? "..." : ""}</p>
+                <div className="p-6 max-h-[500px] overflow-y-auto">
+                  {extractedText && (
+                    <div className="mb-6 p-4 bg-secondary/50 rounded-xl border border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                        <FileText className="w-3 h-3" />
+                        Texte extrait
+                      </p>
+                      <p className="text-sm">{extractedText.substring(0, 200)}{extractedText.length > 200 ? "..." : ""}</p>
+                    </div>
+                  )}
+                  
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{solution}</ReactMarkdown>
                   </div>
-                )}
-                
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown>{solution}</ReactMarkdown>
                 </div>
                 
-                <div className="mt-6 pt-4 border-t border-border flex items-center gap-3">
+                <div className="p-4 border-t border-border bg-secondary/30">
                   <button 
                     onClick={resetUpload}
-                    className="prago-btn-primary flex-1 flex items-center justify-center gap-2"
+                    className="prago-btn-primary w-full flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
                     Nouvel exercice
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </motion.div>
@@ -296,17 +311,17 @@ export default function SnapSolve() {
                 key="placeholder"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="prago-card p-8 h-full flex items-center justify-center"
+                className="bg-card border border-border rounded-3xl h-full min-h-[400px] flex items-center justify-center"
               >
-                <div className="text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="w-8 h-8 text-muted-foreground" />
+                <div className="text-center p-8">
+                  <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mx-auto mb-6">
+                    <Sparkles className="w-10 h-10 text-muted-foreground" />
                   </div>
-                  <h3 className="font-display font-semibold mb-2">
+                  <h3 className="font-display font-bold text-lg mb-2">
                     En attente d'un exercice
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Importe une image pour commencer l'analyse.
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Importe une image ou un PDF pour commencer l'analyse intelligente.
                   </p>
                 </div>
               </motion.div>
@@ -315,28 +330,31 @@ export default function SnapSolve() {
         </div>
       </div>
 
-      {/* Tips */}
+      {/* Tips Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mt-8 prago-card p-6 bg-primary/5"
+        className="mt-10 p-6 rounded-3xl bg-gradient-to-br from-primary/5 via-card to-accent/5 border border-border"
       >
-        <h3 className="font-display font-semibold mb-3">💡 Conseils pour de meilleurs résultats</h3>
-        <ul className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <ArrowRight className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-            <span>Assure-toi que l'image est bien éclairée et nette</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <ArrowRight className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-            <span>Centre bien l'exercice dans le cadre</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <ArrowRight className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-            <span>Évite les reflets et les ombres</span>
-          </li>
-        </ul>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center">
+            <Lightbulb className="w-5 h-5 text-warning" />
+          </div>
+          <h3 className="font-display font-bold">Conseils pour de meilleurs résultats</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            "Assure-toi que l'image est bien éclairée et nette",
+            "Centre bien l'exercice dans le cadre",
+            "Évite les reflets et les ombres",
+          ].map((tip, index) => (
+            <div key={index} className="flex items-start gap-3 p-3 rounded-xl bg-background/50">
+              <ArrowRight className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+              <span className="text-sm">{tip}</span>
+            </div>
+          ))}
+        </div>
       </motion.div>
     </motion.div>
   );
