@@ -119,6 +119,8 @@ Format exact :
 async function extractTextFromImage(imageBase64: string, visionApiKey: string): Promise<string> {
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
   
+  console.log("Calling Vision API with key:", visionApiKey ? "present" : "missing");
+  
   const visionResponse = await fetch(
     `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
     {
@@ -139,10 +141,18 @@ async function extractTextFromImage(imageBase64: string, visionApiKey: string): 
   );
 
   if (!visionResponse.ok) {
-    throw new Error("Vision API error");
+    const errorText = await visionResponse.text();
+    console.error("Vision API error:", visionResponse.status, errorText);
+    throw new Error(`Vision API error: ${visionResponse.status} - ${errorText}`);
   }
 
   const visionData = await visionResponse.json();
+  
+  if (visionData.responses?.[0]?.error) {
+    console.error("Vision API returned error:", visionData.responses[0].error);
+    throw new Error(`Vision API: ${visionData.responses[0].error.message}`);
+  }
+  
   return visionData.responses?.[0]?.fullTextAnnotation?.text || 
          visionData.responses?.[0]?.textAnnotations?.[0]?.description || 
          "";
