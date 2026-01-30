@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Send, Sparkles, User, Paperclip, Mic, Copy, ThumbsUp, ThumbsDown, Loader2, MessageSquare, Zap, BookOpen, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,30 +15,30 @@ interface Message {
   timestamp: Date;
 }
 
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    role: "assistant",
-    content: "Bonjour ! 👋 Je suis ton assistant IA pédagogique. Comment puis-je t'aider dans ton apprentissage aujourd'hui ?",
-    timestamp: new Date(),
-  },
-];
-
-const suggestions = [
-  { icon: BookOpen, text: "Explique-moi les dérivées", color: "text-primary" },
-  { icon: MessageSquare, text: "Quiz sur la révolution française", color: "text-info" },
-  { icon: Zap, text: "Résume ce chapitre", color: "text-warning" },
-  { icon: HelpCircle, text: "Aide-moi avec cet exercice", color: "text-success" },
-];
-
 export default function ChatIA() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "assistant",
+      content: t('chat.welcomeMessage'),
+      timestamp: new Date(),
+    },
+  ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
+
+  const suggestions = [
+    { icon: BookOpen, textKey: "derivatives", color: "text-primary" },
+    { icon: MessageSquare, textKey: "frenchRevolution", color: "text-info" },
+    { icon: Zap, textKey: "summarize", color: "text-warning" },
+    { icon: HelpCircle, textKey: "helpExercise", color: "text-success" },
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,14 +99,14 @@ export default function ChatIA() {
     } catch (error) {
       console.error("Error calling chat-ai:", error);
       toast({
-        title: "Erreur",
-        description: "Impossible de contacter l'assistant IA. Réessayez.",
+        title: t('chat.errorTitle'),
+        description: t('chat.errorDescription'),
         variant: "destructive",
       });
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Désolé, une erreur s'est produite. Veuillez réessayer. 🙁",
+        content: t('chat.errorMessage'),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -121,16 +122,16 @@ export default function ChatIA() {
     }
   };
 
-  const handleSuggestion = (suggestion: string) => {
-    setInput(suggestion);
+  const handleSuggestion = (suggestionKey: string) => {
+    setInput(t(`chat.suggestionItems.${suggestionKey}`));
     inputRef.current?.focus();
   };
 
   const copyToClipboard = (content: string) => {
     navigator.clipboard.writeText(content);
     toast({
-      title: "Copié !",
-      description: "Le message a été copié dans le presse-papiers.",
+      title: t('common.copied'),
+      description: t('common.copiedToClipboard'),
     });
   };
 
@@ -150,16 +151,16 @@ export default function ChatIA() {
             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-background" />
           </div>
           <div>
-            <h1 className="font-display text-xl font-bold">Assistant IA</h1>
+            <h1 className="font-display text-xl font-bold">{t('chat.title')}</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              En ligne • Prêt à t'aider
+              {t('chat.online')} • {t('chat.readyToHelp')}
             </p>
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50">
           <Zap className="w-4 h-4 text-warning" />
-          <span className="text-sm font-medium">{messages.length - 1} messages</span>
+          <span className="text-sm font-medium">{messages.length - 1} {t('chat.messages')}</span>
         </div>
       </motion.div>
 
@@ -244,7 +245,7 @@ export default function ChatIA() {
                   <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
                   <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
-                <span className="text-sm text-muted-foreground">En train de réfléchir...</span>
+                <span className="text-sm text-muted-foreground">{t('chat.thinking')}</span>
               </div>
             </div>
           </motion.div>
@@ -261,21 +262,21 @@ export default function ChatIA() {
           transition={{ delay: 0.2 }}
           className="pb-4"
         >
-          <p className="text-sm font-medium text-muted-foreground mb-3">Suggestions pour commencer :</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">{t('chat.suggestions')}</p>
           <div className="grid grid-cols-2 gap-3">
             {suggestions.map((suggestion, index) => (
               <motion.button
-                key={suggestion.text}
+                key={suggestion.textKey}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
-                onClick={() => handleSuggestion(suggestion.text)}
+                onClick={() => handleSuggestion(suggestion.textKey)}
                 className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 hover:bg-secondary/50 transition-all text-left group"
               >
                 <div className={cn("p-2 rounded-lg bg-secondary group-hover:scale-110 transition-transform", suggestion.color)}>
                   <suggestion.icon className="w-4 h-4" />
                 </div>
-                <span className="text-sm font-medium">{suggestion.text}</span>
+                <span className="text-sm font-medium">{t(`chat.suggestionItems.${suggestion.textKey}`)}</span>
               </motion.button>
             ))}
           </div>
@@ -298,7 +299,7 @@ export default function ChatIA() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Pose ta question..."
+              placeholder={t('chat.placeholder')}
               rows={1}
               disabled={isTyping}
               className="flex-1 bg-transparent border-0 resize-none text-sm placeholder:text-muted-foreground focus:outline-none py-2.5 max-h-32 disabled:opacity-50"
@@ -323,7 +324,7 @@ export default function ChatIA() {
         </div>
         <p className="text-xs text-muted-foreground text-center mt-3 flex items-center justify-center gap-2">
           <Sparkles className="w-3 h-3" />
-          Propulsé par l'IA • Les réponses peuvent contenir des erreurs
+          {t('chat.poweredByAI')}
         </p>
       </motion.div>
     </div>
