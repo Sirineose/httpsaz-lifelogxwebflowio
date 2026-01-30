@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, ChevronLeft, ChevronRight, Sparkles, Play, Pause, Loader2, Trash2, Wand2 } from "lucide-react";
+import { BookOpen, Sparkles, Loader2, Trash2, Wand2, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useComics, Comic, ComicPanel } from "@/hooks/useComics";
 import { useAIGeneration } from "@/hooks/useAIGeneration";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { ComicReader } from "@/components/comics/ComicReader";
 import { toast } from "sonner";
 
 const subjects = ["Biologie", "Histoire", "Mathématiques", "Physique", "Français", "Général"];
@@ -16,27 +17,12 @@ export default function Comics() {
   const { isGenerating, progress, generateFromImage } = useAIGeneration();
   
   const [selectedComic, setSelectedComic] = useState<Comic | null>(null);
-  const [currentPanel, setCurrentPanel] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  
   const [isAIOpen, setIsAIOpen] = useState(false);
 
   // AI state
   const [aiSubject, setAISubject] = useState("Biologie");
   const [aiPanelCount, setAIPanelCount] = useState(4);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  const nextPanel = () => {
-    if (selectedComic && currentPanel < selectedComic.panels.length - 1) {
-      setCurrentPanel(currentPanel + 1);
-    }
-  };
-
-  const prevPanel = () => {
-    if (currentPanel > 0) {
-      setCurrentPanel(currentPanel - 1);
-    }
-  };
 
   const handleAIGenerate = async () => {
     if (!selectedImage) {
@@ -65,98 +51,32 @@ export default function Comics() {
     });
 
     if (newComic) {
-      toast.success("BD générée avec succès !");
+      toast.success("BD générée avec succès ! 🎨");
       setIsAIOpen(false);
       setSelectedImage(null);
       setSelectedComic(newComic);
-      setCurrentPanel(0);
     }
   };
 
   const handleBack = () => {
     setSelectedComic(null);
-    setCurrentPanel(0);
-    setIsPlaying(false);
   };
 
+  const handleDeleteComic = () => {
+    if (selectedComic) {
+      deleteComic(selectedComic.id);
+      handleBack();
+    }
+  };
+
+  // Comic Reader View
   if (selectedComic) {
-    const currentPanelData = selectedComic.panels[currentPanel];
-    
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="h-[calc(100vh-7rem)] flex flex-col"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <button onClick={handleBack} className="p-2 rounded-xl hover:bg-secondary transition-colors">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="font-display text-xl font-semibold">{selectedComic.title}</h1>
-              <p className="text-sm text-muted-foreground">{selectedComic.subject}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Panel {currentPanel + 1}/{selectedComic.panels.length}
-            </span>
-            <button onClick={() => setIsPlaying(!isPlaying)} className="p-2 rounded-xl bg-primary text-primary-foreground">
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            </button>
-            <button onClick={() => { deleteComic(selectedComic.id); handleBack(); }} className="p-2 rounded-xl hover:bg-destructive/10 text-destructive">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 prago-card overflow-hidden flex items-center justify-center relative">
-          {currentPanelData ? (
-            <motion.div
-              key={currentPanel}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              className="w-full max-w-2xl aspect-[4/3] bg-secondary/50 rounded-xl flex items-center justify-center"
-            >
-              <div className="text-center p-8">
-                <div className="text-6xl mb-4">{selectedComic.thumbnail}</div>
-                <p className="text-lg font-medium">{currentPanelData.content}</p>
-                {currentPanelData.hasDialog && currentPanelData.dialog && (
-                  <div className="mt-4 p-4 bg-background rounded-xl border border-border max-w-sm mx-auto">
-                    <p className="text-sm">{currentPanelData.dialog}</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ) : (
-            <div className="text-center">
-              <p className="text-muted-foreground">Aucun panel disponible</p>
-            </div>
-          )}
-
-          <button onClick={prevPanel} disabled={currentPanel === 0} className="absolute left-4 p-3 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors disabled:opacity-50">
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button onClick={nextPanel} disabled={currentPanel === selectedComic.panels.length - 1} className="absolute right-4 p-3 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors disabled:opacity-50">
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2">
-          {selectedComic.panels.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentPanel(index)}
-              className={cn(
-                "flex-1 h-2 rounded-full transition-colors",
-                index === currentPanel ? "prago-gradient-bg" : index < currentPanel ? "bg-primary/50" : "bg-secondary"
-              )}
-            />
-          ))}
-        </div>
-      </motion.div>
+      <ComicReader
+        comic={selectedComic}
+        onBack={handleBack}
+        onDelete={handleDeleteComic}
+      />
     );
   }
 
@@ -257,7 +177,7 @@ export default function Comics() {
           {comics.map((comic) => (
             <button
               key={comic.id}
-              onClick={() => { setSelectedComic(comic); setCurrentPanel(0); }}
+              onClick={() => setSelectedComic(comic)}
               className="prago-card prago-card-interactive p-4 text-left"
             >
               <div className="aspect-square bg-secondary/50 rounded-xl flex items-center justify-center mb-4">
