@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Search, MessageCircle, CreditCard, Shield, BookOpen, Zap } from "lucide-react";
+import { Sparkles, Search, MessageCircle, CreditCard, Shield, BookOpen, Zap, Lock, Server, Eye, FileCheck, Users, Globe } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const categories = [
@@ -35,6 +36,10 @@ const faqData: Record<string, Array<{ question: string; answer: string }>> = {
       question: "PRAGO est-il disponible sur mobile ?",
       answer: "Oui ! PRAGO est entièrement responsive et fonctionne parfaitement sur smartphone et tablette. Une application mobile dédiée est également en cours de développement.",
     },
+    {
+      question: "Quelles matières sont supportées ?",
+      answer: "PRAGO supporte toutes les matières principales : Mathématiques, Physique-Chimie, SVT, Histoire-Géographie, Français, Langues étrangères, Philosophie, et bien d'autres. Notre IA s'adapte à chaque discipline.",
+    },
   ],
   features: [
     {
@@ -43,7 +48,7 @@ const faqData: Record<string, Array<{ question: string; answer: string }>> = {
     },
     {
       question: "Qu'est-ce que Snap & Solve ?",
-      answer: "Snap & Solve te permet de prendre en photo un exercice ou un problème, et notre IA l'analyse pour te fournir une solution détaillée avec explications. Ça fonctionne pour les maths, la physique, la chimie et plus encore.",
+      answer: "Snap & Solve te permet de prendre en photo un exercice ou un problème, et notre IA l'analyse pour te fournir une solution détaillée avec explications. Tu peux aussi importer des PDF ou des images depuis ta galerie.",
     },
     {
       question: "Comment fonctionnent les Quiz & Flashcards ?",
@@ -55,7 +60,11 @@ const faqData: Record<string, Array<{ question: string; answer: string }>> = {
     },
     {
       question: "Comment fonctionne Exam Prep ?",
-      answer: "Exam Prep crée un planning de révision personnalisé basé sur tes examens à venir, ton niveau actuel et le temps disponible. L'IA priorise les sujets où tu as le plus besoin de progresser.",
+      answer: "Exam Prep crée un planning de révision personnalisé basé sur tes examens à venir, ton niveau actuel et le temps disponible. L'IA génère automatiquement des sessions d'étude optimisées et suit ta progression.",
+    },
+    {
+      question: "Puis-je importer des fichiers PDF ?",
+      answer: "Oui ! Tu peux importer des PDF, prendre des photos en direct ou importer depuis ta galerie dans toutes les fonctionnalités : Chat IA, Snap & Solve, Quiz, Notes et Cours en BD.",
     },
   ],
   pricing: [
@@ -77,17 +86,17 @@ const faqData: Record<string, Array<{ question: string; answer: string }>> = {
     },
     {
       question: "Quels moyens de paiement acceptez-vous ?",
-      answer: "Nous acceptons les cartes bancaires (Visa, Mastercard, American Express), PayPal, et Apple Pay. Tous les paiements sont sécurisés et cryptés.",
+      answer: "Nous acceptons les cartes bancaires (Visa, Mastercard, American Express), PayPal, et Apple Pay. Tous les paiements sont sécurisés et cryptés via Stripe.",
     },
   ],
   security: [
     {
       question: "Mes données sont-elles sécurisées ?",
-      answer: "Absolument. Nous utilisons un chiffrement de bout en bout et nos serveurs sont hébergés en Europe, conformément au RGPD. Tes données d'apprentissage ne sont jamais vendues à des tiers.",
+      answer: "Absolument. Nous utilisons un chiffrement de bout en bout (TLS 1.3) et nos serveurs sont hébergés en Europe, conformément au RGPD. Tes données d'apprentissage ne sont jamais vendues à des tiers.",
     },
     {
       question: "Que faites-vous de mes données d'apprentissage ?",
-      answer: "Tes données servent uniquement à personnaliser ton expérience et améliorer nos algorithmes. Tu peux exporter ou supprimer toutes tes données à tout moment depuis ton profil.",
+      answer: "Tes données servent uniquement à personnaliser ton expérience et améliorer nos algorithmes de manière anonymisée. Tu peux exporter ou supprimer toutes tes données à tout moment depuis ton profil.",
     },
     {
       question: "Puis-je supprimer mon compte ?",
@@ -97,8 +106,60 @@ const faqData: Record<string, Array<{ question: string; answer: string }>> = {
       question: "L'IA a-t-elle accès à mes informations personnelles ?",
       answer: "Notre IA n'a accès qu'aux informations nécessaires pour t'aider dans ton apprentissage (matières, niveau, historique de conversation). Elle n'accède jamais à tes informations personnelles sensibles.",
     },
+    {
+      question: "Comment sont protégées mes données de paiement ?",
+      answer: "Les paiements sont gérés par Stripe, leader mondial du paiement en ligne. PRAGO n'a jamais accès à tes informations bancaires complètes. Stripe est certifié PCI-DSS niveau 1.",
+    },
   ],
 };
+
+const securityFeatures = [
+  {
+    icon: Lock,
+    title: "Chiffrement TLS 1.3",
+    description: "Toutes les communications sont chiffrées avec les protocoles les plus récents.",
+  },
+  {
+    icon: Server,
+    title: "Hébergement Européen",
+    description: "Serveurs situés en Europe, conformes aux normes RGPD les plus strictes.",
+  },
+  {
+    icon: Eye,
+    title: "Aucune Revente de Données",
+    description: "Tes données ne sont jamais vendues ni partagées avec des tiers à des fins commerciales.",
+  },
+  {
+    icon: FileCheck,
+    title: "Conformité RGPD",
+    description: "Respect total du Règlement Général sur la Protection des Données européen.",
+  },
+  {
+    icon: Users,
+    title: "Accès Contrôlé",
+    description: "Seuls les employés autorisés peuvent accéder aux données, avec audit complet.",
+  },
+  {
+    icon: Globe,
+    title: "Backup Réguliers",
+    description: "Sauvegardes automatiques quotidiennes avec rétention de 30 jours.",
+  },
+];
+
+const aiSecurityInfo = [
+  {
+    title: "Modèles IA de confiance",
+    content: "Nous utilisons exclusivement des modèles IA de pointe (Gemini, Mistral) via des APIs sécurisées. Les données envoyées à l'IA ne sont pas utilisées pour entraîner les modèles.",
+  },
+  {
+    title: "Traitement en temps réel",
+    content: "Les données sont traitées à la volée et ne sont pas stockées sur les serveurs des fournisseurs d'IA. Seuls les résultats sont conservés dans ton compte.",
+  },
+  {
+    title: "Anonymisation",
+    content: "Les requêtes envoyées à l'IA sont anonymisées et ne contiennent aucune information personnelle identifiable.",
+  },
+];
 
 export default function FAQ() {
   const [activeCategory, setActiveCategory] = useState("general");
@@ -136,7 +197,7 @@ export default function FAQ() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-16">
+      <main className="max-w-5xl mx-auto px-4 py-16">
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -145,100 +206,215 @@ export default function FAQ() {
         >
           <span className="prago-badge-primary mb-4 inline-block">Centre d'aide</span>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
-            Questions fréquentes
+            FAQ & Sécurité
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Trouve rapidement les réponses à tes questions sur PRAGO.
+            Trouve rapidement les réponses à tes questions et découvre comment nous protégeons tes données.
           </p>
         </motion.div>
 
-        {/* Search */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Rechercher une question..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="prago-input pl-12 w-full"
-            />
-          </div>
-        </motion.div>
+        <Tabs defaultValue="faq" className="space-y-8">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+            <TabsTrigger value="faq" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              FAQ
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Sécurité
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Categories */}
-        {!searchQuery && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-wrap gap-2 mb-8"
-          >
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                  activeCategory === category.id
-                    ? "prago-gradient-bg text-white"
-                    : "bg-secondary text-foreground hover:bg-secondary/80"
-                )}
+          {/* FAQ Tab */}
+          <TabsContent value="faq" className="space-y-6">
+            {/* Search */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Rechercher une question..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="prago-input pl-12 w-full"
+                />
+              </div>
+            </motion.div>
+
+            {/* Categories */}
+            {!searchQuery && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-wrap gap-2"
               >
-                <category.icon className="w-4 h-4" />
-                {category.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                      activeCategory === category.id
+                        ? "prago-gradient-bg text-white"
+                        : "bg-secondary text-foreground hover:bg-secondary/80"
+                    )}
+                  >
+                    <category.icon className="w-4 h-4" />
+                    {category.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
 
-        {/* FAQ Accordion */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="prago-card p-6"
-        >
-          {searchQuery && (
-            <p className="text-sm text-muted-foreground mb-4">
-              {filteredFaqs.length} résultat(s) pour "{searchQuery}"
-            </p>
-          )}
+            {/* FAQ Accordion */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="prago-card p-6"
+            >
+              {searchQuery && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  {filteredFaqs.length} résultat(s) pour "{searchQuery}"
+                </p>
+              )}
 
-          {filteredFaqs.length > 0 ? (
-            <Accordion type="single" collapsible className="space-y-2">
-              {filteredFaqs.map((faq, index) => (
-                <AccordionItem
-                  key={index}
-                  value={`item-${index}`}
-                  className="border border-border rounded-xl px-4 data-[state=open]:bg-secondary/30"
-                >
-                  <AccordionTrigger className="text-left font-medium hover:no-underline">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Aucun résultat trouvé.</p>
-            </div>
-          )}
-        </motion.div>
+              {filteredFaqs.length > 0 ? (
+                <Accordion type="single" collapsible className="space-y-2">
+                  {filteredFaqs.map((faq, index) => (
+                    <AccordionItem
+                      key={index}
+                      value={`item-${index}`}
+                      className="border border-border rounded-xl px-4 data-[state=open]:bg-secondary/30"
+                    >
+                      <AccordionTrigger className="text-left font-medium hover:no-underline">
+                        {faq.question}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Aucun résultat trouvé.</p>
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-8">
+            {/* Security Features Grid */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h2 className="font-display text-2xl font-bold mb-6 text-center">
+                Infrastructure & Protection
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {securityFeatures.map((feature, index) => (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="prago-card p-6"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                      <feature.icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* AI Security */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="prago-card p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl prago-gradient-bg flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Sécurité de l'IA</h2>
+                  <p className="text-sm text-muted-foreground">Comment nous protégeons tes données lors de l'utilisation de l'IA</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {aiSecurityInfo.map((item, index) => (
+                  <div key={index} className="p-4 rounded-xl bg-secondary/50">
+                    <h3 className="font-semibold mb-2">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.content}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* RGPD Compliance */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="prago-card prago-gradient-border p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <FileCheck className="w-8 h-8 text-success" />
+                <h2 className="font-display text-xl font-bold">Conformité RGPD</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <p className="flex items-center gap-2">
+                    <span className="text-success">✓</span>
+                    Droit d'accès à tes données personnelles
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-success">✓</span>
+                    Droit de rectification des informations inexactes
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-success">✓</span>
+                    Droit à l'effacement (droit à l'oubli)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="flex items-center gap-2">
+                    <span className="text-success">✓</span>
+                    Droit à la portabilité des données
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-success">✓</span>
+                    Droit d'opposition au traitement
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-success">✓</span>
+                    Notification en cas de violation de données
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
 
         {/* Contact CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
           className="mt-12"
         >
           <div className="prago-card p-8 text-center">
