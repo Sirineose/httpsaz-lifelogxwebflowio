@@ -9,21 +9,11 @@ import {
   FileText,
   ArrowRight,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const stats = [
-  { label: "Heures étudiées", value: "24.5h", icon: Clock, trend: "+12%" },
-  { label: "Quiz complétés", value: "47", icon: Target, trend: "+8%" },
-  { label: "Série en cours", value: "12 jours", icon: Flame, trend: "" },
-  { label: "Notes créées", value: "23", icon: FileText, trend: "+5%" },
-];
-
-const recentActivities = [
-  { title: "Quiz Mathématiques", subject: "Algèbre linéaire", score: 85, time: "Il y a 2h" },
-  { title: "Flashcards Histoire", subject: "Révolution française", score: 92, time: "Il y a 5h" },
-  { title: "Note synthèse", subject: "Biologie cellulaire", score: null, time: "Hier" },
-];
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useAuth } from "@/hooks/useAuth";
 
 const quickActions = [
   { title: "Chat IA", description: "Pose une question", icon: Sparkles, href: "/chat", color: "primary" },
@@ -46,6 +36,46 @@ const itemVariants = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const { data: stats, isLoading } = useDashboardStats();
+
+  const displayName = stats?.firstName || user?.email?.split("@")[0] || "Étudiant";
+
+  const statsData = [
+    { 
+      label: "Heures étudiées", 
+      value: `${stats?.hoursStudied || 0}h`, 
+      icon: Clock, 
+      trend: stats?.hoursStudiedTrend ? `${stats.hoursStudiedTrend > 0 ? "+" : ""}${stats.hoursStudiedTrend}%` : "" 
+    },
+    { 
+      label: "Quiz complétés", 
+      value: stats?.quizCompleted?.toString() || "0", 
+      icon: Target, 
+      trend: stats?.quizCompletedTrend ? `${stats.quizCompletedTrend > 0 ? "+" : ""}${stats.quizCompletedTrend}%` : "" 
+    },
+    { 
+      label: "Série en cours", 
+      value: `${stats?.streakDays || 0} jour${(stats?.streakDays || 0) > 1 ? "s" : ""}`, 
+      icon: Flame, 
+      trend: "" 
+    },
+    { 
+      label: "Notes créées", 
+      value: stats?.notesCreated?.toString() || "0", 
+      icon: FileText, 
+      trend: stats?.notesCreatedTrend ? `${stats.notesCreatedTrend > 0 ? "+" : ""}${stats.notesCreatedTrend}%` : "" 
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial="hidden"
@@ -57,17 +87,19 @@ export default function Dashboard() {
       <motion.div variants={itemVariants} className="flex items-start justify-between">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
-            Bonjour, Sirine 👋
+            Bonjour, {displayName} 👋
           </h1>
           <p className="text-muted-foreground">
-            Continue ta progression, tu as 3 objectifs en cours.
+            {stats?.streakDays && stats.streakDays > 0
+              ? `Continue ta série de ${stats.streakDays} jour${stats.streakDays > 1 ? "s" : ""} !`
+              : "Commence une nouvelle session d'étude aujourd'hui."}
           </p>
         </div>
       </motion.div>
 
       {/* Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {statsData.map((stat) => (
           <div key={stat.label} className="prago-card p-4 md:p-5">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -134,21 +166,22 @@ export default function Dashboard() {
         <motion.div variants={itemVariants} className="lg:col-span-2 prago-card p-5 md:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display text-lg font-semibold">Progression hebdomadaire</h2>
-            <button className="text-sm text-primary hover:underline">Voir détails</button>
+            <Link to="/exam-prep" className="text-sm text-primary hover:underline">Voir détails</Link>
           </div>
 
-          {/* Weekly Chart Placeholder */}
+          {/* Weekly Chart */}
           <div className="h-48 flex items-end justify-between gap-2 mb-4">
             {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day, i) => {
-              const heights = [60, 45, 80, 55, 90, 40, 70];
+              const height = stats?.weeklyProgress?.[i] || 0;
               return (
                 <div key={day} className="flex-1 flex flex-col items-center gap-2">
                   <div className="w-full flex flex-col justify-end h-36">
                     <motion.div
                       initial={{ height: 0 }}
-                      animate={{ height: `${heights[i]}%` }}
+                      animate={{ height: `${height}%` }}
                       transition={{ delay: i * 0.1, duration: 0.5 }}
-                      className="w-full rounded-t-lg prago-gradient-bg"
+                      className={`w-full rounded-t-lg ${height > 0 ? "prago-gradient-bg" : "bg-muted"}`}
+                      style={{ minHeight: height > 0 ? "8px" : "4px" }}
                     />
                   </div>
                   <span className="text-xs text-muted-foreground">{day}</span>
@@ -159,12 +192,16 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-4 pt-4 border-t border-border">
             <div>
-              <p className="text-2xl font-bold">8.2h</p>
+              <p className="text-2xl font-bold">{stats?.weeklyTotal || 0}h</p>
               <p className="text-sm text-muted-foreground">Cette semaine</p>
             </div>
             <div className="h-10 w-px bg-border" />
             <div>
-              <p className="text-2xl font-bold">+23%</p>
+              <p className="text-2xl font-bold">
+                {stats?.weeklyTrend !== undefined && stats.weeklyTrend !== 0 
+                  ? `${stats.weeklyTrend > 0 ? "+" : ""}${stats.weeklyTrend}%`
+                  : "—"}
+              </p>
               <p className="text-sm text-muted-foreground">vs semaine dernière</p>
             </div>
           </div>
@@ -177,41 +214,53 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0"
-              >
-                <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
-                  {activity.score !== null ? (
-                    <Target className="w-5 h-5 text-primary" />
-                  ) : (
-                    <FileText className="w-5 h-5 text-muted-foreground" />
+            {stats?.recentActivities && stats.recentActivities.length > 0 ? (
+              stats.recentActivities.map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+                    {activity.type === "session" ? (
+                      <Clock className="w-5 h-5 text-primary" />
+                    ) : activity.type === "quiz" ? (
+                      <Target className="w-5 h-5 text-success" />
+                    ) : (
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{activity.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{activity.subject}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                  </div>
+                  {activity.score !== null && (
+                    <div className="prago-badge-success">{activity.score}%</div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{activity.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">{activity.subject}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                </div>
-                {activity.score !== null && (
-                  <div className="prago-badge-success">{activity.score}%</div>
-                )}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Aucune activité récente</p>
+                <p className="text-xs">Commence à étudier pour voir ton historique</p>
               </div>
-            ))}
+            )}
           </div>
 
-          <Link
-            to="/profile"
-            className="flex items-center justify-center gap-2 text-sm text-primary mt-4 hover:underline"
-          >
-            Voir tout l'historique
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {stats?.recentActivities && stats.recentActivities.length > 0 && (
+            <Link
+              to="/profile"
+              className="flex items-center justify-center gap-2 text-sm text-primary mt-4 hover:underline"
+            >
+              Voir tout l'historique
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </motion.div>
       </div>
 
-      {/* Continue Learning */}
+      {/* Continue Learning CTA */}
       <motion.div variants={itemVariants} className="prago-card prago-gradient-border p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="w-14 h-14 rounded-2xl prago-gradient-bg flex items-center justify-center flex-shrink-0">
@@ -219,17 +268,18 @@ export default function Dashboard() {
           </div>
           <div className="flex-1">
             <h3 className="font-display font-semibold text-lg mb-1">
-              Continue ton cours de Mathématiques
+              {stats?.streakDays && stats.streakDays > 0
+                ? "Continue ta progression"
+                : "Commence une nouvelle session"}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Chapitre 4 : Intégrales et primitives — 65% complété
+              {stats?.hoursStudied && stats.hoursStudied > 0
+                ? `Tu as déjà étudié ${stats.hoursStudied}h cette semaine. Continue !`
+                : "Planifie ta prochaine session d'étude avec l'IA."}
             </p>
-            <div className="mt-3 prago-progress max-w-md">
-              <div className="prago-progress-bar" style={{ width: "65%" }} />
-            </div>
           </div>
           <Link to="/chat" className="prago-btn-primary flex items-center gap-2 mt-2 md:mt-0">
-            Continuer
+            {stats?.streakDays && stats.streakDays > 0 ? "Continuer" : "Commencer"}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
