@@ -15,6 +15,7 @@ import {
   Sparkles,
   Menu,
   X,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { title: "Cours en BD", href: "/comics", icon: BookOpen },
   { title: "Exam Prep", href: "/exam-prep", icon: GraduationCap },
   { title: "Profil", href: "/profile", icon: User },
+  { title: "FAQ & Aide", href: "/faq", icon: HelpCircle },
 ];
 
 interface AppSidebarProps {
