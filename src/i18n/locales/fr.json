@@ -1,0 +1,201 @@
+{
+  "common": {
+    "search": "Rechercher...",
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "submit": "Soumettre",
+    "close": "Fermer",
+    "yes": "Oui",
+    "no": "Non",
+    "or": "ou",
+    "and": "et"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "signup": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "noAccount": "Pas encore de compte ?",
+    "hasAccount": "Déjà un compte ?",
+    "guest": "Invité",
+    "guestMode": "Mode invité",
+    "profile": "Mon profil",
+    "quit": "Quitter"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "chatAI": "Chat IA",
+    "snapSolve": "Snap & Solve",
+    "quizFlashcards": "Quiz & Flashcards",
+    "notes": "Notes & Synthèses",
+    "comics": "Cours en BD",
+    "examPrep": "Exam Prep",
+    "profile": "Profil",
+    "faq": "FAQ & Aide",
+    "pricing": "Tarifs",
+    "demo": "Démo"
+  },
+  "landing": {
+    "badge": "✨ Révolutionne tes révisions avec l'IA",
+    "title": "Apprends plus vite,",
+    "titleHighlight": "retiens mieux",
+    "description": "PRAGO transforme tes cours en quiz, flashcards et BD interactives. L'IA qui comprend vraiment comment tu apprends.",
+    "cta": "Essayer gratuitement",
+    "ctaSecondary": "Découvrir les fonctionnalités",
+    "trustedBy": "Utilisé par +10 000 étudiants",
+    "features": "Tout ce dont tu as besoin pour réussir",
+    "featuresDesc": "Une suite complète d'outils alimentés par l'IA pour transformer ta façon d'apprendre.",
+    "readyToTransform": "Prêt à transformer tes études ?",
+    "joinStudents": "Rejoins des milliers d'étudiants qui utilisent PRAGO pour réussir leurs examens."
+  },
+  "pricing": {
+    "title": "Choisissez votre plan",
+    "subtitle": "Des formules adaptées à chaque étudiant. Commencez gratuitement et évoluez selon vos besoins.",
+    "badge": "Tarifs simples",
+    "popular": "Le plus populaire",
+    "currentPlan": "Plan actuel",
+    "perMonth": "/mois",
+    "startFree": "Commencer gratuitement",
+    "freeTrial": "Essai gratuit 7 jours",
+    "upgrade": "Passer à ce plan",
+    "faq": "Questions fréquentes",
+    "moreFaq": "Besoin de plus d'infos ?",
+    "allFaq": "Voir toutes les FAQ",
+    "ctaTitle": "Prêt à transformer tes études ?",
+    "ctaDesc": "Rejoins des milliers d'étudiants qui utilisent PRAGO pour réussir leurs examens.",
+    "ctaButton": "Commencer maintenant",
+    "plans": {
+      "free": {
+        "name": "Gratuit",
+        "description": "Parfait pour découvrir PRAGO",
+        "features": [
+          "10 requêtes IA par jour",
+          "Quiz illimités",
+          "3 notes max",
+          "Accès communauté"
+        ],
+        "limitations": [
+          "Pas de Snap & Solve",
+          "Pas de cours en BD",
+          "Support limité"
+        ]
+      },
+      "essential": {
+        "name": "Essentiel",
+        "description": "Pour bien démarrer",
+        "features": [
+          "50 requêtes IA par jour",
+          "Snap & Solve limité",
+          "10 notes",
+          "Cours en BD basique",
+          "Support email"
+        ],
+        "limitations": []
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Pour les étudiants sérieux",
+        "features": [
+          "100 requêtes IA par jour",
+          "Snap & Solve illimité",
+          "Notes illimitées",
+          "Cours en BD",
+          "Export PDF",
+          "Support prioritaire"
+        ],
+        "limitations": []
+      },
+      "ultimate": {
+        "name": "Ultime",
+        "description": "L'expérience complète",
+        "features": [
+          "Requêtes IA illimitées",
+          "Toutes les fonctionnalités Pro",
+          "Exam Prep avancé",
+          "Tuteur IA personnalisé",
+          "Analytics détaillés",
+          "Support 24/7",
+          "Accès anticipé nouveautés"
+        ],
+        "limitations": []
+      }
+    },
+    "faqs": {
+      "changePlan": {
+        "question": "Puis-je changer de plan à tout moment ?",
+        "answer": "Oui, vous pouvez upgrader ou downgrader votre plan à tout moment. Les changements prennent effet immédiatement."
+      },
+      "commitment": {
+        "question": "Y a-t-il un engagement ?",
+        "answer": "Non, tous nos plans sont sans engagement. Vous pouvez annuler à tout moment."
+      },
+      "trial": {
+        "question": "Comment fonctionne l'essai gratuit ?",
+        "answer": "L'essai Pro de 7 jours vous donne accès à toutes les fonctionnalités. Aucune carte requise."
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Bon retour",
+    "welcomeGuest": "Bienvenue",
+    "subtitle": "Continue ta progression et atteins tes objectifs.",
+    "quickActions": "Actions rapides",
+    "recentActivity": "Activité récente",
+    "studyTime": "Temps d'étude",
+    "quizzesCompleted": "Quiz complétés",
+    "cardsReviewed": "Cartes révisées",
+    "streak": "Série en cours"
+  },
+  "chat": {
+    "title": "Chat IA",
+    "subtitle": "Ton assistant personnel pour les révisions",
+    "placeholder": "Pose ta question...",
+    "send": "Envoyer",
+    "thinking": "Réflexion en cours...",
+    "suggestions": "Suggestions"
+  },
+  "snapSolve": {
+    "title": "Snap & Solve",
+    "subtitle": "Prends une photo, obtiens la solution",
+    "upload": "Uploader une image",
+    "camera": "Utiliser la caméra",
+    "dragDrop": "Glisse-dépose ton fichier ici",
+    "analyzing": "Analyse en cours..."
+  },
+  "notes": {
+    "title": "Notes & Synthèses",
+    "subtitle": "Organise tes cours intelligemment",
+    "newNote": "Nouvelle note",
+    "allNotes": "Toutes les notes",
+    "synthesis": "Synthèses"
+  },
+  "profile": {
+    "title": "Mon Profil",
+    "personalInfo": "Informations personnelles",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "school": "École / Université",
+    "grade": "Niveau d'études",
+    "bio": "Bio",
+    "subscription": "Abonnement",
+    "manageSubscription": "Gérer l'abonnement",
+    "dangerZone": "Zone de danger",
+    "deleteAccount": "Supprimer le compte"
+  },
+  "language": {
+    "title": "Langue",
+    "fr": "Français",
+    "en": "English",
+    "ar": "العربية"
+  }
+}

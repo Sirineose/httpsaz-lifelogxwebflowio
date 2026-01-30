@@ -1,5 +1,6 @@
 import { Bell, Search, Moon, Sun, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface AppHeaderProps {
   sidebarCollapsed: boolean;
@@ -20,6 +22,7 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains("dark");
@@ -61,22 +64,25 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
               searchFocused && "scale-[1.02]"
             )}
           >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground rtl:left-auto rtl:right-3" />
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder={t('common.search')}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-transparent focus:border-primary/30 focus:bg-secondary text-sm placeholder:text-muted-foreground outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-transparent focus:border-primary/30 focus:bg-secondary text-sm placeholder:text-muted-foreground outline-none transition-all rtl:pl-4 rtl:pr-10"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[10px] font-medium text-muted-foreground bg-background rounded border border-border hidden md:block">
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-[10px] font-medium text-muted-foreground bg-background rounded border border-border hidden md:block rtl:right-auto rtl:left-3">
               ⌘K
             </kbd>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-2 ml-auto rtl:ml-0 rtl:mr-auto">
+          {/* Language Selector */}
+          <LanguageSelector variant="icon" />
+
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
@@ -96,7 +102,7 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
             aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary rtl:right-auto rtl:left-2" />
           </button>
 
           {/* User Menu */}
@@ -118,18 +124,18 @@ export function AppHeader({ sidebarCollapsed }: AppHeaderProps) {
               <DropdownMenuSeparator />
               {!isGuest && (
                 <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  Mon profil
+                  {t('auth.profile')}
                 </DropdownMenuItem>
               )}
               {isGuest && (
                 <DropdownMenuItem onClick={() => navigate("/auth")}>
-                  Se connecter
+                  {t('auth.login')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                {isGuest ? "Quitter" : "Se déconnecter"}
+                <LogOut className="mr-2 h-4 w-4 rtl:mr-0 rtl:ml-2" />
+                {isGuest ? t('auth.quit') : t('auth.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

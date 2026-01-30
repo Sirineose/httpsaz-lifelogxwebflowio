@@ -107,10 +107,12 @@ export default function Profile() {
 
   const getPlanBadge = () => {
     switch (plan) {
-      case 'premium':
-        return <span className="prago-badge-warning">Premium</span>;
+      case 'ultimate':
+        return <span className="prago-badge-warning">Ultime</span>;
       case 'pro':
         return <span className="prago-badge-primary">Pro</span>;
+      case 'essential':
+        return <span className="prago-badge bg-info/10 text-info">Essentiel</span>;
       default:
         return <span className="prago-badge-secondary">Gratuit</span>;
     }

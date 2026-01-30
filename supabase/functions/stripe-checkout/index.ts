@@ -14,10 +14,11 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-// Price IDs - à configurer dans Stripe Dashboard
+// Price IDs - À configurer dans Stripe Dashboard
 const PRICE_IDS = {
+  essential_monthly: Deno.env.get('STRIPE_PRICE_ESSENTIAL_MONTHLY') || 'price_essential_monthly',
   pro_monthly: Deno.env.get('STRIPE_PRICE_PRO_MONTHLY') || 'price_pro_monthly',
-  premium_monthly: Deno.env.get('STRIPE_PRICE_PREMIUM_MONTHLY') || 'price_premium_monthly',
+  ultimate_monthly: Deno.env.get('STRIPE_PRICE_ULTIMATE_MONTHLY') || 'price_ultimate_monthly',
 };
 
 // Helper function to authenticate user
@@ -188,10 +189,12 @@ Deno.serve(async (req) => {
       const priceId = subscription.items.data[0]?.price.id;
       
       let plan = 'free';
-      if (priceId === PRICE_IDS.pro_monthly) {
+      if (priceId === PRICE_IDS.essential_monthly) {
+        plan = 'essential';
+      } else if (priceId === PRICE_IDS.pro_monthly) {
         plan = 'pro';
-      } else if (priceId === PRICE_IDS.premium_monthly) {
-        plan = 'premium';
+      } else if (priceId === PRICE_IDS.ultimate_monthly) {
+        plan = 'ultimate';
       }
 
       return new Response(
