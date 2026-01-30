@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.generate-comic-image]
 verify_jwt = false
 
+[functions.generate-study-plan]
+verify_jwt = false
+
 [functions.stripe-checkout]
 verify_jwt = false
 
