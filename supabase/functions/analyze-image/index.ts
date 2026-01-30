@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
     console.log("Extracting text from image using Gemini...");
 
-    // Step 1: Extract text from image using Gemini 2.5 Flash
+    // Step 1: Extract text from image using Gemini 2.5 Flash Lite (cheapest)
     const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           {
             role: "user",
