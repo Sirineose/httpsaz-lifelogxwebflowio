@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, FileText, Sparkles, MoreVertical, Clock, Folder, Tag, Trash2, Edit3, X, Loader2, Wand2 } from "lucide-react";
+import { Plus, Search, FileText, Sparkles, MoreVertical, Clock, Folder, Tag, Trash2, Edit3, X, Loader2, Wand2, BookOpen, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotes, Note } from "@/hooks/useNotes";
 import { useAIGeneration } from "@/hooks/useAIGeneration";
@@ -24,14 +24,12 @@ export default function Notes() {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formContent, setFormContent] = useState("");
   const [formSubject, setFormSubject] = useState("Général");
   const [formTags, setFormTags] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // AI state
   const [aiSubject, setAISubject] = useState("Général");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -147,47 +145,45 @@ export default function Notes() {
       animate={{ opacity: 1, y: 0 }}
       className="h-[calc(100vh-7rem)]"
     >
-      {/* Header */}
+      {/* Premium Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">Notes & Synthèses</h1>
-          <p className="text-muted-foreground text-sm">Organise tes cours et génère des synthèses IA</p>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl prago-gradient-bg flex items-center justify-center shadow-lg">
+            <BookOpen className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl font-bold">Notes & Synthèses</h1>
+            <p className="text-muted-foreground">Organisation intelligente de tes cours</p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>
             <DialogTrigger asChild>
-              <button className="prago-btn-primary flex items-center gap-2">
+              <button className="prago-btn-primary flex items-center gap-2 shadow-lg">
                 <Wand2 className="w-4 h-4" />
                 Synthèse IA
               </button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl prago-gradient-bg flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
                   Générer une synthèse
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
+              <div className="space-y-5 mt-4">
                 <p className="text-sm text-muted-foreground">
                   Importe une image de ton cours et l'IA créera une synthèse structurée.
                 </p>
                 
-                <DocumentUpload
-                  onFileSelected={(base64) => setSelectedImage(base64)}
-                  isLoading={isGenerating}
-                />
+                <DocumentUpload onFileSelected={(base64) => setSelectedImage(base64)} isLoading={isGenerating} />
 
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Matière</label>
-                  <select
-                    value={aiSubject}
-                    onChange={(e) => setAISubject(e.target.value)}
-                    className="prago-input w-full"
-                  >
-                    {subjects.filter(s => s !== "Tous").map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+                  <label className="text-sm font-medium mb-2 block">Matière</label>
+                  <select value={aiSubject} onChange={(e) => setAISubject(e.target.value)} className="prago-input w-full">
+                    {subjects.filter(s => s !== "Tous").map((s) => (<option key={s} value={s}>{s}</option>))}
                   </select>
                 </div>
 
@@ -200,11 +196,7 @@ export default function Notes() {
                   </div>
                 )}
 
-                <button
-                  onClick={handleAIGenerate}
-                  disabled={!selectedImage || isGenerating}
-                  className="prago-btn-primary w-full flex items-center justify-center gap-2"
-                >
+                <button onClick={handleAIGenerate} disabled={!selectedImage || isGenerating} className="prago-btn-primary w-full flex items-center justify-center gap-2">
                   {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                   Générer la synthèse
                 </button>
@@ -214,7 +206,7 @@ export default function Notes() {
 
           <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <button className="prago-btn-secondary flex items-center gap-2 w-fit">
+              <button className="prago-btn-secondary flex items-center gap-2">
                 <Plus className="w-4 h-4" />
                 Manuel
               </button>
@@ -225,23 +217,21 @@ export default function Notes() {
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Titre</label>
+                  <label className="text-sm font-medium mb-2 block">Titre</label>
                   <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="prago-input w-full" placeholder="Titre de la note" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Matière</label>
+                  <label className="text-sm font-medium mb-2 block">Matière</label>
                   <select value={formSubject} onChange={(e) => setFormSubject(e.target.value)} className="prago-input w-full">
-                    {subjects.filter(s => s !== "Tous").map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+                    {subjects.filter(s => s !== "Tous").map((s) => (<option key={s} value={s}>{s}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Contenu</label>
+                  <label className="text-sm font-medium mb-2 block">Contenu</label>
                   <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="prago-input w-full min-h-[120px] resize-y" placeholder="Contenu de la note..." />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Tags (séparés par des virgules)</label>
+                  <label className="text-sm font-medium mb-2 block">Tags (séparés par des virgules)</label>
                   <input type="text" value={formTags} onChange={(e) => setFormTags(e.target.value)} className="prago-input w-full" placeholder="Calcul, Analyse, ..." />
                 </div>
                 <button onClick={handleCreate} disabled={!formTitle.trim() || isSaving} className="prago-btn-primary w-full flex items-center justify-center gap-2">
@@ -254,105 +244,119 @@ export default function Notes() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100%-5rem)]">
+      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100%-6rem)]">
         {/* Sidebar */}
         <div className="lg:w-80 flex-shrink-0 space-y-4">
+          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="prago-input w-full pl-10" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="prago-input w-full pl-11" />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {subjects.map((subject) => (
-              <button
-                key={subject}
-                onClick={() => setSelectedSubject(subject)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm transition-colors",
-                  selectedSubject === subject ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/80"
-                )}
-              >
-                {subject}
-              </button>
-            ))}
+          {/* Filter Pills */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <div className="flex flex-wrap gap-2">
+              {subjects.slice(0, 4).map((subject) => (
+                <button
+                  key={subject}
+                  onClick={() => setSelectedSubject(subject)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    selectedSubject === subject ? "prago-gradient-bg text-white" : "bg-secondary hover:bg-secondary/80"
+                  )}
+                >
+                  {subject}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-20rem)]">
+          {/* Notes List */}
+          <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-22rem)] pr-2">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : filteredNotes.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Aucune note trouvée</p>
-                <button onClick={() => setIsAIOpen(true)} className="text-primary text-sm hover:underline mt-2">
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">Aucune note trouvée</p>
+                <button onClick={() => setIsAIOpen(true)} className="text-primary text-sm hover:underline">
                   Générer avec l'IA
                 </button>
               </div>
             ) : (
-              filteredNotes.map((note) => (
-                <button
+              filteredNotes.map((note, index) => (
+                <motion.button
                   key={note.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
                   onClick={() => { setSelectedNote(note); setIsEditing(false); }}
                   className={cn(
-                    "w-full text-left p-4 rounded-xl transition-all",
-                    selectedNote?.id === note.id ? "prago-card border-primary/30" : "hover:bg-secondary/50"
+                    "w-full text-left p-4 rounded-2xl transition-all border",
+                    selectedNote?.id === note.id 
+                      ? "bg-card border-primary/30 shadow-lg" 
+                      : "border-transparent hover:bg-secondary/50"
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <h3 className="font-medium text-sm line-clamp-1">{note.title}</h3>
                     {note.is_synthesis && (
-                      <span className="prago-badge-primary text-[10px] flex-shrink-0">
-                        <Sparkles className="w-3 h-3 mr-1" />
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium flex-shrink-0">
+                        <Sparkles className="w-3 h-3" />
                         IA
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{note.content || "Aucun contenu"}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Folder className="w-3 h-3" />
-                    {note.subject}
-                    <span className="mx-1">•</span>
-                    <Clock className="w-3 h-3" />
-                    {formatDate(note.updated_at)}
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{note.content || "Aucun contenu"}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Folder className="w-3 h-3" />
+                      {note.subject}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatDate(note.updated_at)}
+                    </span>
                   </div>
-                </button>
+                </motion.button>
               ))
             )}
           </div>
         </div>
 
         {/* Note Editor */}
-        <div className="flex-1 prago-card p-6 overflow-hidden flex flex-col">
+        <div className="flex-1 bg-card border border-border rounded-3xl overflow-hidden flex flex-col shadow-xl">
           {selectedNote ? (
             isEditing ? (
-              <div className="flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-display text-lg font-semibold">Modifier la note</h2>
-                  <button onClick={() => setIsEditing(false)} className="p-2 rounded-lg hover:bg-secondary">
+              <div className="flex-1 flex flex-col p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-lg font-bold">Modifier la note</h2>
+                  <button onClick={() => setIsEditing(false)} className="p-2 rounded-xl hover:bg-secondary">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
                 <div className="space-y-4 flex-1 overflow-y-auto">
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Titre</label>
+                    <label className="text-sm font-medium mb-2 block">Titre</label>
                     <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="prago-input w-full" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Matière</label>
+                    <label className="text-sm font-medium mb-2 block">Matière</label>
                     <select value={formSubject} onChange={(e) => setFormSubject(e.target.value)} className="prago-input w-full">
-                      {subjects.filter(s => s !== "Tous").map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
+                      {subjects.filter(s => s !== "Tous").map((s) => (<option key={s} value={s}>{s}</option>))}
                     </select>
                   </div>
                   <div className="flex-1">
-                    <label className="text-sm font-medium mb-1 block">Contenu</label>
-                    <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="prago-input w-full min-h-[200px] resize-y" />
+                    <label className="text-sm font-medium mb-2 block">Contenu</label>
+                    <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="prago-input w-full min-h-[250px] resize-y" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Tags</label>
+                    <label className="text-sm font-medium mb-2 block">Tags</label>
                     <input type="text" value={formTags} onChange={(e) => setFormTags(e.target.value)} className="prago-input w-full" />
                   </div>
                 </div>
@@ -363,48 +367,55 @@ export default function Notes() {
               </div>
             ) : (
               <>
-                <div className="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-border">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="px-2 py-0.5 rounded-md bg-secondary text-xs">{selectedNote.subject}</span>
-                      {selectedNote.is_synthesis && (
-                        <span className="prago-badge-primary text-xs">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          Synthèse IA
-                        </span>
-                      )}
+                {/* Note Header */}
+                <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-3 py-1 rounded-lg bg-secondary text-xs font-medium">{selectedNote.subject}</span>
+                        {selectedNote.is_synthesis && (
+                          <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+                            <Sparkles className="w-3 h-3" />
+                            Synthèse IA
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="font-display text-xl font-bold">{selectedNote.title}</h2>
                     </div>
-                    <h2 className="font-display text-xl font-semibold">{selectedNote.title}</h2>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-2 rounded-xl hover:bg-secondary transition-colors">
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={startEditing}>
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(selectedNote.id)} className="text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={startEditing}>
-                        <Edit3 className="w-4 h-4 mr-2" />
-                        Modifier
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(selectedNote.id)} className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
+                {/* Note Content */}
+                <div className="flex-1 overflow-y-auto p-6">
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedNote.content || "Aucun contenu"}</p>
                 </div>
 
+                {/* Tags Footer */}
                 {selectedNote.tags.length > 0 && (
-                  <div className="flex items-center gap-2 pt-4 border-t border-border mt-4">
-                    <Tag className="w-4 h-4 text-muted-foreground" />
-                    {selectedNote.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-1 rounded-md bg-secondary text-xs">{tag}</span>
-                    ))}
+                  <div className="p-4 border-t border-border bg-secondary/30">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-muted-foreground" />
+                      {selectedNote.tags.map((tag) => (
+                        <span key={tag} className="px-3 py-1 rounded-lg bg-background text-xs font-medium">{tag}</span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
@@ -412,13 +423,13 @@ export default function Notes() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-display font-semibold text-lg mb-2">Génère une synthèse IA</h3>
-                <p className="text-sm text-muted-foreground mb-4">Importe une image de ton cours et l'IA créera une synthèse</p>
-                <button onClick={() => setIsAIOpen(true)} className="prago-btn-primary">
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Générer
-                </button>
+                <div className="w-20 h-20 rounded-3xl bg-secondary flex items-center justify-center mx-auto mb-6">
+                  <FileText className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="font-display font-bold text-lg mb-2">Sélectionne une note</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Clique sur une note dans la liste pour la visualiser et la modifier.
+                </p>
               </div>
             </div>
           )}
