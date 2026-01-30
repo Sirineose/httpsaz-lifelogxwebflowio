@@ -34,33 +34,28 @@ export default function SnapSolve() {
   const analyzeImage = async (imageBase64: string) => {
     setUploadState("uploading");
     
-    // Check if user is authenticated
-    if (!user) {
-      // Demo mode for guests
-      setUploadState("analyzing");
-      setTimeout(() => {
-        setUploadState("done");
-        setSolution(`🔒 **Mode invité**
-
-Pour accéder à l'analyse complète de vos exercices, veuillez vous connecter ou créer un compte.
-
-**Fonctionnalités disponibles avec un compte :**
-- Extraction du texte via Google Cloud Vision
-- Résolution détaillée par l'IA Mistral
-- Historique de vos exercices analysés`);
-      }, 1500);
-      return;
-    }
+    // Guest mode check - guests now have full access
+    const isGuest = !user && localStorage.getItem('prago_guest_mode') === 'true';
 
     try {
       setUploadState("analyzing");
       
-      const { data, error } = await supabase.functions.invoke("analyze-image", {
-        body: { imageBase64 },
-      });
-
-      if (error) {
-        throw error;
+      // Use direct fetch for guests (no auth header), invoke for authenticated users
+      let data;
+      if (isGuest) {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64, guestMode: true }),
+        });
+        if (!response.ok) throw new Error("API error");
+        data = await response.json();
+      } else {
+        const result = await supabase.functions.invoke("analyze-image", {
+          body: { imageBase64 },
+        });
+        if (result.error) throw result.error;
+        data = result.data;
       }
 
       setExtractedText(data.extractedText);
@@ -100,9 +95,7 @@ Pour accéder à l'analyse complète de vos exercices, veuillez vous connecter o
           Snap & Solve
         </h1>
         <p className="text-muted-foreground">
-          {user 
-            ? "Prends une photo de ton exercice et obtiens la solution détaillée instantanément."
-            : "Connecte-toi pour analyser tes exercices avec l'IA."}
+          Prends une photo de ton exercice et obtiens la solution détaillée instantanément.
         </p>
       </div>
 
