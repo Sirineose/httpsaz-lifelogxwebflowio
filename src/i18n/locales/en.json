@@ -1,0 +1,201 @@
+{
+  "common": {
+    "search": "Search...",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "guest": "Guest",
+    "guestMode": "Guest mode",
+    "profile": "My profile",
+    "quit": "Quit"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "chatAI": "AI Chat",
+    "snapSolve": "Snap & Solve",
+    "quizFlashcards": "Quiz & Flashcards",
+    "notes": "Notes & Summaries",
+    "comics": "Comic Courses",
+    "examPrep": "Exam Prep",
+    "profile": "Profile",
+    "faq": "FAQ & Help",
+    "pricing": "Pricing",
+    "demo": "Demo"
+  },
+  "landing": {
+    "badge": "✨ Revolutionize your studies with AI",
+    "title": "Learn faster,",
+    "titleHighlight": "remember better",
+    "description": "PRAGO transforms your courses into quizzes, flashcards and interactive comics. AI that truly understands how you learn.",
+    "cta": "Try for free",
+    "ctaSecondary": "Discover features",
+    "trustedBy": "Used by 10,000+ students",
+    "features": "Everything you need to succeed",
+    "featuresDesc": "A complete suite of AI-powered tools to transform the way you learn.",
+    "readyToTransform": "Ready to transform your studies?",
+    "joinStudents": "Join thousands of students using PRAGO to ace their exams."
+  },
+  "pricing": {
+    "title": "Choose your plan",
+    "subtitle": "Plans adapted to every student. Start free and upgrade as you need.",
+    "badge": "Simple pricing",
+    "popular": "Most popular",
+    "currentPlan": "Current plan",
+    "perMonth": "/month",
+    "startFree": "Start for free",
+    "freeTrial": "7-day free trial",
+    "upgrade": "Upgrade to this plan",
+    "faq": "Frequently asked questions",
+    "moreFaq": "Need more info?",
+    "allFaq": "View all FAQs",
+    "ctaTitle": "Ready to transform your studies?",
+    "ctaDesc": "Join thousands of students using PRAGO to ace their exams.",
+    "ctaButton": "Get started now",
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Perfect to discover PRAGO",
+        "features": [
+          "10 AI requests per day",
+          "Unlimited quizzes",
+          "3 notes max",
+          "Community access"
+        ],
+        "limitations": [
+          "No Snap & Solve",
+          "No comic courses",
+          "Limited support"
+        ]
+      },
+      "essential": {
+        "name": "Essential",
+        "description": "Great for getting started",
+        "features": [
+          "50 AI requests per day",
+          "Limited Snap & Solve",
+          "10 notes",
+          "Basic comic courses",
+          "Email support"
+        ],
+        "limitations": []
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "For serious students",
+        "features": [
+          "100 AI requests per day",
+          "Unlimited Snap & Solve",
+          "Unlimited notes",
+          "Comic courses",
+          "PDF export",
+          "Priority support"
+        ],
+        "limitations": []
+      },
+      "ultimate": {
+        "name": "Ultimate",
+        "description": "The complete experience",
+        "features": [
+          "Unlimited AI requests",
+          "All Pro features",
+          "Advanced Exam Prep",
+          "Personal AI tutor",
+          "Detailed analytics",
+          "24/7 support",
+          "Early access to new features"
+        ],
+        "limitations": []
+      }
+    },
+    "faqs": {
+      "changePlan": {
+        "question": "Can I change my plan at any time?",
+        "answer": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
+      },
+      "commitment": {
+        "question": "Is there a commitment?",
+        "answer": "No, all our plans are commitment-free. You can cancel at any time."
+      },
+      "trial": {
+        "question": "How does the free trial work?",
+        "answer": "The 7-day Pro trial gives you access to all features. No credit card required."
+      }
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "welcomeGuest": "Welcome",
+    "subtitle": "Continue your progress and reach your goals.",
+    "quickActions": "Quick actions",
+    "recentActivity": "Recent activity",
+    "studyTime": "Study time",
+    "quizzesCompleted": "Quizzes completed",
+    "cardsReviewed": "Cards reviewed",
+    "streak": "Current streak"
+  },
+  "chat": {
+    "title": "AI Chat",
+    "subtitle": "Your personal assistant for studying",
+    "placeholder": "Ask your question...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "suggestions": "Suggestions"
+  },
+  "snapSolve": {
+    "title": "Snap & Solve",
+    "subtitle": "Take a photo, get the solution",
+    "upload": "Upload an image",
+    "camera": "Use camera",
+    "dragDrop": "Drag and drop your file here",
+    "analyzing": "Analyzing..."
+  },
+  "notes": {
+    "title": "Notes & Summaries",
+    "subtitle": "Organize your courses intelligently",
+    "newNote": "New note",
+    "allNotes": "All notes",
+    "synthesis": "Summaries"
+  },
+  "profile": {
+    "title": "My Profile",
+    "personalInfo": "Personal information",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "school": "School / University",
+    "grade": "Grade level",
+    "bio": "Bio",
+    "subscription": "Subscription",
+    "manageSubscription": "Manage subscription",
+    "dangerZone": "Danger zone",
+    "deleteAccount": "Delete account"
+  },
+  "language": {
+    "title": "Language",
+    "fr": "Français",
+    "en": "English",
+    "ar": "العربية"
+  }
+}

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export type SubscriptionPlan = 'free' | 'pro' | 'premium';
+export type SubscriptionPlan = 'free' | 'essential' | 'pro' | 'ultimate';
 
 interface SubscriptionData {
   subscription: {
