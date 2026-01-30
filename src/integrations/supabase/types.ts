@@ -14,6 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
+      comics: {
+        Row: {
+          created_at: string
+          duration: string | null
+          id: string
+          panels: Json | null
+          progress: number | null
+          subject: string
+          thumbnail: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration?: string | null
+          id?: string
+          panels?: Json | null
+          progress?: number | null
+          subject: string
+          thumbnail?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: string | null
+          id?: string
+          panels?: Json | null
+          progress?: number | null
+          subject?: string
+          thumbnail?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exams: {
+        Row: {
+          created_at: string
+          exam_date: string
+          id: string
+          progress: number | null
+          subject: string
+          title: string
+          topics: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_date: string
+          id?: string
+          progress?: number | null
+          subject: string
+          title: string
+          topics?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_date?: string
+          id?: string
+          progress?: number | null
+          subject?: string
+          title?: string
+          topics?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flashcards: {
+        Row: {
+          back: string
+          created_at: string
+          deck_name: string
+          front: string
+          id: string
+          is_known: boolean | null
+          subject: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          back: string
+          created_at?: string
+          deck_name?: string
+          front: string
+          id?: string
+          is_known?: boolean | null
+          subject?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          back?: string
+          created_at?: string
+          deck_name?: string
+          front?: string
+          id?: string
+          is_known?: boolean | null
+          subject?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          is_synthesis: boolean | null
+          subject: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_synthesis?: boolean | null
+          subject?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_synthesis?: boolean | null
+          subject?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -64,6 +211,86 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          correct_index: number
+          created_at: string
+          id: string
+          options: string[]
+          question: string
+          quiz_name: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          correct_index: number
+          created_at?: string
+          id?: string
+          options: string[]
+          question: string
+          quiz_name?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          correct_index?: number
+          created_at?: string
+          id?: string
+          options?: string[]
+          question?: string
+          quiz_name?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          completed: boolean | null
+          created_at: string
+          end_time: string
+          exam_id: string | null
+          id: string
+          session_date: string
+          start_time: string
+          subject: string
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string
+          end_time: string
+          exam_id?: string | null
+          id?: string
+          session_date?: string
+          start_time: string
+          subject: string
+          topic: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string
+          end_time?: string
+          exam_id?: string | null
+          id?: string
+          session_date?: string
+          start_time?: string
+          subject?: string
+          topic?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
