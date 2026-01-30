@@ -51,6 +51,12 @@ export default function Landing() {
             <a href="#demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Démo
             </a>
+            <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Tarifs
+            </Link>
+            <Link to="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              FAQ
+            </Link>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/auth" className="prago-btn-ghost text-sm py-2">
@@ -265,6 +271,14 @@ export default function Landing() {
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="font-display font-semibold">PRAGO</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <Link to="/pricing" className="hover:text-foreground transition-colors">
+                Tarifs
+              </Link>
+              <Link to="/faq" className="hover:text-foreground transition-colors">
+                FAQ & Sécurité
+              </Link>
             </div>
             <p className="text-sm text-muted-foreground">
               © 2024 PRAGO. Tous droits réservés.
