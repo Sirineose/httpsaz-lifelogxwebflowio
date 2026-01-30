@@ -62,21 +62,8 @@ export default function ChatIA() {
     setInput("");
     setIsTyping(true);
 
-    // Check if user is authenticated
-    if (!user) {
-      // Guest mode - simulate response
-      setTimeout(() => {
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `🔒 **Mode invité**\n\nPour accéder aux fonctionnalités IA complètes, veuillez vous connecter ou créer un compte.\n\nEn attendant, voici une réponse de démonstration pour votre question sur "${currentInput.slice(0, 30)}..."`,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-        setIsTyping(false);
-      }, 1000);
-      return;
-    }
+    // Guest mode check - guests now have full access
+    const isGuest = !user && localStorage.getItem('prago_guest_mode') === 'true';
 
     try {
       // Prepare messages for API (excluding the initial greeting)
@@ -86,12 +73,22 @@ export default function ChatIA() {
       
       apiMessages.push({ role: "user", content: currentInput });
 
-      const { data, error } = await supabase.functions.invoke("chat-ai", {
-        body: { messages: apiMessages },
-      });
-
-      if (error) {
-        throw error;
+      // Use direct fetch for guests (no auth header), invoke for authenticated users
+      let data;
+      if (isGuest) {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: apiMessages, guestMode: true }),
+        });
+        if (!response.ok) throw new Error("API error");
+        data = await response.json();
+      } else {
+        const result = await supabase.functions.invoke("chat-ai", {
+          body: { messages: apiMessages },
+        });
+        if (result.error) throw result.error;
+        data = result.data;
       }
 
       const aiMessage: Message = {
@@ -152,7 +149,7 @@ export default function ChatIA() {
           <div>
             <h1 className="font-display font-semibold">Chat IA Pédagogique</h1>
             <p className="text-xs text-muted-foreground">
-              {user ? "Propulsé par l'IA" : "Mode démo (connectez-vous pour l'accès complet)"}
+              Propulsé par l'IA
             </p>
           </div>
         </div>
