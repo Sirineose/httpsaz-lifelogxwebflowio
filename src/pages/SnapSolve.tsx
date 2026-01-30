@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Camera, FileText, X, Sparkles, ArrowRight, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Upload, Camera, FileText, X, Sparkles, ArrowRight, Image as ImageIcon, Loader2, File } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,30 +8,37 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 
 type UploadState = "idle" | "uploading" | "analyzing" | "done";
+type FileType = "image" | "pdf";
 
 export default function SnapSolve() {
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [preview, setPreview] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<FileType>("image");
+  const [fileName, setFileName] = useState<string | null>(null);
   const [solution, setSolution] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: FileType = "image") => {
     const file = e.target.files?.[0];
     if (file) {
+      setFileType(type);
+      setFileName(file.name);
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
         setPreview(base64);
-        await analyzeImage(base64);
+        await analyzeFile(base64, type);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const analyzeImage = async (imageBase64: string) => {
+  const analyzeFile = async (fileBase64: string, type: FileType) => {
     setUploadState("uploading");
     
     // Guest mode check - guests now have full access
@@ -42,17 +49,21 @@ export default function SnapSolve() {
       
       // Use direct fetch for guests (no auth header), invoke for authenticated users
       let data;
+      const requestBody = type === "pdf" 
+        ? { pdfBase64: fileBase64, guestMode: isGuest }
+        : { imageBase64: fileBase64, guestMode: isGuest };
+        
       if (isGuest) {
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64, guestMode: true }),
+          body: JSON.stringify(requestBody),
         });
         if (!response.ok) throw new Error("API error");
         data = await response.json();
       } else {
         const result = await supabase.functions.invoke("analyze-image", {
-          body: { imageBase64 },
+          body: requestBody,
         });
         if (result.error) throw result.error;
         data = result.data;
@@ -76,11 +87,12 @@ export default function SnapSolve() {
   const resetUpload = () => {
     setUploadState("idle");
     setPreview(null);
+    setFileName(null);
     setSolution(null);
     setExtractedText(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (imageInputRef.current) imageInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (pdfInputRef.current) pdfInputRef.current.value = "";
   };
 
   return (
@@ -110,17 +122,33 @@ export default function SnapSolve() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
+                {/* Hidden inputs */}
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
                   capture="environment"
+                  onChange={(e) => handleFileChange(e, "image")}
+                  className="hidden"
                 />
-                <label
-                  htmlFor="file-upload"
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, "image")}
+                  className="hidden"
+                />
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => handleFileChange(e, "pdf")}
+                  className="hidden"
+                />
+
+                {/* Main upload area */}
+                <div
+                  onClick={() => imageInputRef.current?.click()}
                   className="prago-card prago-gradient-border block cursor-pointer group"
                 >
                   <div className="p-12 text-center">
@@ -138,24 +166,35 @@ export default function SnapSolve() {
                         <ImageIcon className="w-4 h-4" />
                         Images
                       </span>
+                      <span className="flex items-center gap-1">
+                        <File className="w-4 h-4" />
+                        PDF
+                      </span>
                     </div>
                   </div>
-                </label>
+                </div>
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <label 
-                    htmlFor="file-upload"
-                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors cursor-pointer"
-                  >
-                    <Camera className="w-6 h-6 mx-auto mb-2 text-primary" />
-                    <span className="text-sm font-medium">Prendre une photo</span>
-                  </label>
+                {/* Quick Actions - 3 options */}
+                <div className="grid grid-cols-3 gap-3 mt-4">
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => pdfInputRef.current?.click()}
                     className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
                   >
-                    <FileText className="w-6 h-6 mx-auto mb-2 text-info" />
+                    <File className="w-6 h-6 mx-auto mb-2 text-destructive" />
+                    <span className="text-sm font-medium">PDF</span>
+                  </button>
+                  <button
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
+                  >
+                    <Camera className="w-6 h-6 mx-auto mb-2 text-primary" />
+                    <span className="text-sm font-medium">Photo</span>
+                  </button>
+                  <button
+                    onClick={() => imageInputRef.current?.click()}
+                    className="prago-card p-4 text-center hover:bg-secondary/50 transition-colors"
+                  >
+                    <ImageIcon className="w-6 h-6 mx-auto mb-2 text-info" />
                     <span className="text-sm font-medium">Galerie</span>
                   </button>
                 </div>
@@ -169,11 +208,18 @@ export default function SnapSolve() {
                 className="prago-card overflow-hidden"
               >
                 <div className="relative">
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="w-full aspect-[4/3] object-cover"
-                  />
+                  {fileType === "pdf" ? (
+                    <div className="w-full aspect-[4/3] bg-secondary flex flex-col items-center justify-center gap-3">
+                      <File className="w-16 h-16 text-destructive" />
+                      <p className="text-sm font-medium text-muted-foreground">{fileName}</p>
+                    </div>
+                  ) : (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="w-full aspect-[4/3] object-cover"
+                    />
+                  )}
                   <button
                     onClick={resetUpload}
                     className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
