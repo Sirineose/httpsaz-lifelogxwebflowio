@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
@@ -11,12 +10,10 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
-  Plus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useAuth } from "@/hooks/useAuth";
-import { QuickUploadModal } from "@/components/dashboard/QuickUploadModal";
 
 const quickActions = [
   { title: "Chat IA", description: "Pose une question", icon: Sparkles, href: "/chat", color: "primary" },
@@ -39,7 +36,6 @@ const itemVariants = {
 };
 
 export default function Dashboard() {
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const { user } = useAuth();
   const { data: stats, isLoading } = useDashboardStats();
 
@@ -76,7 +72,6 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <QuickUploadModal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} />
       </div>
     );
   }
@@ -88,9 +83,6 @@ export default function Dashboard() {
       variants={containerVariants}
       className="space-y-6"
     >
-      {/* Upload Modal */}
-      <QuickUploadModal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} />
-
       {/* Welcome */}
       <motion.div variants={itemVariants} className="flex items-start justify-between">
         <div>
@@ -103,14 +95,8 @@ export default function Dashboard() {
               : "Commence une nouvelle session d'étude aujourd'hui."}
           </p>
         </div>
-        {/* Quick upload button */}
-        <button
-          onClick={() => setShowUploadModal(true)}
-          className="w-12 h-12 rounded-2xl prago-gradient-bg flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-        >
-          <Plus className="w-6 h-6 text-white" />
-        </button>
       </motion.div>
+
       {/* Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statsData.map((stat) => (
