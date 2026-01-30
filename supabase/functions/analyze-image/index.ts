@@ -74,38 +74,22 @@ Deno.serve(async (req) => {
 
     console.log(`Extracting text from ${isPdf ? "PDF" : "image"} using Gemini...`);
 
-    // Determine the content type based on file type
-    const mimeType = isPdf ? "application/pdf" : fileBase64.split(";")[0]?.split(":")[1] || "image/jpeg";
+    // Build the extraction prompt
     const extractionPrompt = isPdf
       ? "Extrais tout le texte visible dans ce document PDF. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel."
       : "Extrais tout le texte visible dans cette image. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel.";
 
-    // Build the content array for Gemini - handle both PDF and image
-    const contentArray: Array<{type: string; text?: string; image_url?: {url: string}; file?: {data: string; mimeType: string}}> = [
-      {
-        type: "text",
-        text: extractionPrompt
-      }
-    ];
-
-    if (isPdf) {
-      // For PDF, use the file format that Gemini supports
-      const base64Data = fileBase64.includes(",") ? fileBase64.split(",")[1] : fileBase64;
-      contentArray.push({
-        type: "file",
-        file: {
-          data: base64Data,
-          mimeType: "application/pdf"
-        }
-      });
-    } else {
-      contentArray.push({
-        type: "image_url",
-        image_url: {
-          url: fileBase64
-        }
-      });
+    // For both images and PDFs, use the image_url format with proper data URL
+    // Gemini supports PDFs via this format when the data URL includes the correct mime type
+    let dataUrl = fileBase64;
+    if (isPdf && !fileBase64.startsWith("data:")) {
+      // If it's raw base64 without data URL prefix, add it
+      dataUrl = `data:application/pdf;base64,${fileBase64}`;
+    } else if (!isPdf && !fileBase64.startsWith("data:")) {
+      dataUrl = `data:image/jpeg;base64,${fileBase64}`;
     }
+
+    console.log("Data URL prefix:", dataUrl.substring(0, 50));
 
     // Step 1: Extract text from image/PDF using Gemini 2.5 Flash Lite (cheapest)
     const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -119,7 +103,18 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: contentArray
+            content: [
+              {
+                type: "text",
+                text: extractionPrompt
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: dataUrl
+                }
+              }
+            ]
           }
         ],
       }),
