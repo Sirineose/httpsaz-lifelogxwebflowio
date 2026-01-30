@@ -134,16 +134,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Step 2: Send extracted text to Mistral for solution
-    const mistralApiKey = Deno.env.get("MISTRAL_API_KEY");
-    if (!mistralApiKey) {
-      console.error("MISTRAL_API_KEY is not set");
-      return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
+    // Step 2: Generate solution with Gemini (same API key, different model for better reasoning)
     const systemPrompt = `Tu es PRAGO, un assistant pédagogique expert en résolution d'exercices.
 ${subject ? `Tu es spécialisé en ${subject}.` : ""}
 
@@ -161,16 +152,16 @@ Règles :
 - Mets en évidence les résultats finaux
 - Si l'exercice n'est pas clair, demande des précisions`;
 
-    console.log("Calling Mistral API for solution...");
+    console.log("Calling Gemini for solution...");
 
-    const mistralResponse = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    const solutionResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${mistralApiKey}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistral-large-latest",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Voici le texte extrait de l'exercice :\n\n${extractedText}\n\nRésous cet exercice de manière détaillée.` },
@@ -180,20 +171,33 @@ Règles :
       }),
     });
 
-    if (!mistralResponse.ok) {
-      const errorText = await mistralResponse.text();
-      console.error("Mistral API error:", errorText);
+    if (!solutionResponse.ok) {
+      const errorText = await solutionResponse.text();
+      console.error("Gemini solution API error:", solutionResponse.status, errorText);
+      
+      if (solutionResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Trop de requêtes, réessaye dans quelques instants." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (solutionResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Crédits insuffisants." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: "AI service error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const mistralData = await mistralResponse.json();
-    const solution = mistralData.choices?.[0]?.message?.content;
+    const solutionData = await solutionResponse.json();
+    const solution = solutionData.choices?.[0]?.message?.content;
 
     if (!solution) {
-      console.error("No solution from Mistral:", mistralData);
+      console.error("No solution from Gemini:", solutionData);
       return new Response(
         JSON.stringify({ error: "No solution generated" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
