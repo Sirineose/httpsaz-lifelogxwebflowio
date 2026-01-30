@@ -1,21 +1,27 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, FileText, Sparkles, MoreVertical, Clock, Folder, Tag, Trash2, Edit3, X, Loader2 } from "lucide-react";
+import { Plus, Search, FileText, Sparkles, MoreVertical, Clock, Folder, Tag, Trash2, Edit3, X, Loader2, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotes, Note } from "@/hooks/useNotes";
+import { useAIGeneration } from "@/hooks/useAIGeneration";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format, formatDistanceToNow } from "date-fns";
+import { DocumentUpload } from "@/components/DocumentUpload";
+import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 const subjects = ["Tous", "Mathématiques", "Histoire", "Biologie", "Physique", "Français", "Général"];
 
 export default function Notes() {
   const { notes, loading, createNote, updateNote, deleteNote } = useNotes();
+  const { isGenerating, progress, generateFromImage } = useAIGeneration();
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("Tous");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
   // Form state
@@ -23,8 +29,11 @@ export default function Notes() {
   const [formContent, setFormContent] = useState("");
   const [formSubject, setFormSubject] = useState("Général");
   const [formTags, setFormTags] = useState("");
-  const [formIsSynthesis, setFormIsSynthesis] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // AI state
+  const [aiSubject, setAISubject] = useState("Général");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const filteredNotes = notes.filter((note) => {
     const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,7 +47,6 @@ export default function Notes() {
     setFormContent("");
     setFormSubject("Général");
     setFormTags("");
-    setFormIsSynthesis(false);
   };
 
   const handleCreate = async () => {
@@ -49,12 +57,41 @@ export default function Notes() {
       content: formContent,
       subject: formSubject,
       tags: formTags.split(",").map(t => t.trim()).filter(Boolean),
-      is_synthesis: formIsSynthesis,
+      is_synthesis: false,
     });
     setIsSaving(false);
     if (result) {
       setIsCreateOpen(false);
       resetForm();
+    }
+  };
+
+  const handleAIGenerate = async () => {
+    if (!selectedImage) {
+      toast.error("Sélectionne une image de ton cours");
+      return;
+    }
+
+    const result = await generateFromImage(selectedImage, "synthesis", aiSubject);
+
+    if (!result || !result.title || !result.content) {
+      toast.error("Erreur lors de la génération");
+      return;
+    }
+
+    const newNote = await createNote({
+      title: result.title,
+      content: result.content,
+      subject: aiSubject,
+      tags: result.tags || [],
+      is_synthesis: true,
+    });
+
+    if (newNote) {
+      toast.success("Synthèse générée avec succès !");
+      setIsAIOpen(false);
+      setSelectedImage(null);
+      setSelectedNote(newNote);
     }
   };
 
@@ -66,7 +103,6 @@ export default function Notes() {
       content: formContent,
       subject: formSubject,
       tags: formTags.split(",").map(t => t.trim()).filter(Boolean),
-      is_synthesis: formIsSynthesis,
     });
     setIsSaving(false);
     if (success) {
@@ -77,7 +113,6 @@ export default function Notes() {
         content: formContent,
         subject: formSubject,
         tags: formTags.split(",").map(t => t.trim()).filter(Boolean),
-        is_synthesis: formIsSynthesis,
       });
     }
   };
@@ -95,7 +130,6 @@ export default function Notes() {
     setFormContent(selectedNote.content);
     setFormSubject(selectedNote.subject);
     setFormTags(selectedNote.tags.join(", "));
-    setFormIsSynthesis(selectedNote.is_synthesis);
     setIsEditing(true);
   };
 
@@ -116,105 +150,118 @@ export default function Notes() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
-            Notes & Synthèses
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Organise tes cours et génère des synthèses IA
-          </p>
+          <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">Notes & Synthèses</h1>
+          <p className="text-muted-foreground text-sm">Organise tes cours et génère des synthèses IA</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <button className="prago-btn-primary flex items-center gap-2 w-fit">
-              <Plus className="w-4 h-4" />
-              Nouvelle note
-            </button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Créer une nouvelle note</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Titre</label>
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="prago-input w-full"
-                  placeholder="Titre de la note"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Matière</label>
-                <select
-                  value={formSubject}
-                  onChange={(e) => setFormSubject(e.target.value)}
-                  className="prago-input w-full"
-                >
-                  {subjects.filter(s => s !== "Tous").map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Contenu</label>
-                <textarea
-                  value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
-                  className="prago-input w-full min-h-[120px] resize-y"
-                  placeholder="Contenu de la note..."
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Tags (séparés par des virgules)</label>
-                <input
-                  type="text"
-                  value={formTags}
-                  onChange={(e) => setFormTags(e.target.value)}
-                  className="prago-input w-full"
-                  placeholder="Calcul, Analyse, ..."
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_synthesis"
-                  checked={formIsSynthesis}
-                  onChange={(e) => setFormIsSynthesis(e.target.checked)}
-                  className="rounded border-border"
-                />
-                <label htmlFor="is_synthesis" className="text-sm">Synthèse IA</label>
-              </div>
-              <button
-                onClick={handleCreate}
-                disabled={!formTitle.trim() || isSaving}
-                className="prago-btn-primary w-full flex items-center justify-center gap-2"
-              >
-                {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Créer la note
+        <div className="flex gap-2">
+          <Dialog open={isAIOpen} onOpenChange={setIsAIOpen}>
+            <DialogTrigger asChild>
+              <button className="prago-btn-primary flex items-center gap-2">
+                <Wand2 className="w-4 h-4" />
+                Synthèse IA
               </button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Générer une synthèse
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Importe une image de ton cours et l'IA créera une synthèse structurée.
+                </p>
+                
+                <DocumentUpload
+                  onFileSelected={(base64) => setSelectedImage(base64)}
+                  isLoading={isGenerating}
+                />
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Matière</label>
+                  <select
+                    value={aiSubject}
+                    onChange={(e) => setAISubject(e.target.value)}
+                    className="prago-input w-full"
+                  >
+                    {subjects.filter(s => s !== "Tous").map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {isGenerating && (
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      <span className="text-sm">{progress}</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleAIGenerate}
+                  disabled={!selectedImage || isGenerating}
+                  className="prago-btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                  Générer la synthèse
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <button className="prago-btn-secondary flex items-center gap-2 w-fit">
+                <Plus className="w-4 h-4" />
+                Manuel
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Créer une note manuellement</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Titre</label>
+                  <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="prago-input w-full" placeholder="Titre de la note" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Matière</label>
+                  <select value={formSubject} onChange={(e) => setFormSubject(e.target.value)} className="prago-input w-full">
+                    {subjects.filter(s => s !== "Tous").map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Contenu</label>
+                  <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="prago-input w-full min-h-[120px] resize-y" placeholder="Contenu de la note..." />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Tags (séparés par des virgules)</label>
+                  <input type="text" value={formTags} onChange={(e) => setFormTags(e.target.value)} className="prago-input w-full" placeholder="Calcul, Analyse, ..." />
+                </div>
+                <button onClick={handleCreate} disabled={!formTitle.trim() || isSaving} className="prago-btn-primary w-full flex items-center justify-center gap-2">
+                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Créer la note
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100%-5rem)]">
         {/* Sidebar */}
         <div className="lg:w-80 flex-shrink-0 space-y-4">
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="prago-input w-full pl-10"
-            />
+            <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="prago-input w-full pl-10" />
           </div>
 
-          {/* Subject Filter */}
           <div className="flex flex-wrap gap-2">
             {subjects.map((subject) => (
               <button
@@ -222,9 +269,7 @@ export default function Notes() {
                 onClick={() => setSelectedSubject(subject)}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-sm transition-colors",
-                  selectedSubject === subject
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary hover:bg-secondary/80"
+                  selectedSubject === subject ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/80"
                 )}
               >
                 {subject}
@@ -232,7 +277,6 @@ export default function Notes() {
             ))}
           </div>
 
-          {/* Notes List */}
           <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-20rem)]">
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -242,6 +286,9 @@ export default function Notes() {
               <div className="text-center py-8 text-muted-foreground">
                 <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Aucune note trouvée</p>
+                <button onClick={() => setIsAIOpen(true)} className="text-primary text-sm hover:underline mt-2">
+                  Générer avec l'IA
+                </button>
               </div>
             ) : (
               filteredNotes.map((note) => (
@@ -250,9 +297,7 @@ export default function Notes() {
                   onClick={() => { setSelectedNote(note); setIsEditing(false); }}
                   className={cn(
                     "w-full text-left p-4 rounded-xl transition-all",
-                    selectedNote?.id === note.id
-                      ? "prago-card border-primary/30"
-                      : "hover:bg-secondary/50"
+                    selectedNote?.id === note.id ? "prago-card border-primary/30" : "hover:bg-secondary/50"
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -264,9 +309,7 @@ export default function Notes() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                    {note.content || "Aucun contenu"}
-                  </p>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{note.content || "Aucun contenu"}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Folder className="w-3 h-3" />
                     {note.subject}
@@ -294,20 +337,11 @@ export default function Notes() {
                 <div className="space-y-4 flex-1 overflow-y-auto">
                   <div>
                     <label className="text-sm font-medium mb-1 block">Titre</label>
-                    <input
-                      type="text"
-                      value={formTitle}
-                      onChange={(e) => setFormTitle(e.target.value)}
-                      className="prago-input w-full"
-                    />
+                    <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="prago-input w-full" />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Matière</label>
-                    <select
-                      value={formSubject}
-                      onChange={(e) => setFormSubject(e.target.value)}
-                      className="prago-input w-full"
-                    >
+                    <select value={formSubject} onChange={(e) => setFormSubject(e.target.value)} className="prago-input w-full">
                       {subjects.filter(s => s !== "Tous").map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -315,37 +349,14 @@ export default function Notes() {
                   </div>
                   <div className="flex-1">
                     <label className="text-sm font-medium mb-1 block">Contenu</label>
-                    <textarea
-                      value={formContent}
-                      onChange={(e) => setFormContent(e.target.value)}
-                      className="prago-input w-full min-h-[200px] resize-y"
-                    />
+                    <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="prago-input w-full min-h-[200px] resize-y" />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Tags</label>
-                    <input
-                      type="text"
-                      value={formTags}
-                      onChange={(e) => setFormTags(e.target.value)}
-                      className="prago-input w-full"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="edit_is_synthesis"
-                      checked={formIsSynthesis}
-                      onChange={(e) => setFormIsSynthesis(e.target.checked)}
-                      className="rounded border-border"
-                    />
-                    <label htmlFor="edit_is_synthesis" className="text-sm">Synthèse IA</label>
+                    <input type="text" value={formTags} onChange={(e) => setFormTags(e.target.value)} className="prago-input w-full" />
                   </div>
                 </div>
-                <button
-                  onClick={handleUpdate}
-                  disabled={!formTitle.trim() || isSaving}
-                  className="prago-btn-primary w-full mt-4 flex items-center justify-center gap-2"
-                >
+                <button onClick={handleUpdate} disabled={!formTitle.trim() || isSaving} className="prago-btn-primary w-full mt-4 flex items-center justify-center gap-2">
                   {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   Enregistrer
                 </button>
@@ -376,10 +387,7 @@ export default function Notes() {
                         <Edit3 className="w-4 h-4 mr-2" />
                         Modifier
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(selectedNote.id)}
-                        className="text-destructive"
-                      >
+                      <DropdownMenuItem onClick={() => handleDelete(selectedNote.id)} className="text-destructive">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Supprimer
                       </DropdownMenuItem>
@@ -388,18 +396,14 @@ export default function Notes() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {selectedNote.content || "Aucun contenu"}
-                  </p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedNote.content || "Aucun contenu"}</p>
                 </div>
 
                 {selectedNote.tags.length > 0 && (
                   <div className="flex items-center gap-2 pt-4 border-t border-border mt-4">
                     <Tag className="w-4 h-4 text-muted-foreground" />
                     {selectedNote.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-1 rounded-md bg-secondary text-xs">
-                        {tag}
-                      </span>
+                      <span key={tag} className="px-2 py-1 rounded-md bg-secondary text-xs">{tag}</span>
                     ))}
                   </div>
                 )}
@@ -409,10 +413,12 @@ export default function Notes() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-display font-semibold text-lg mb-2">Sélectionne une note</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choisis une note dans la liste ou crées-en une nouvelle
-                </p>
+                <h3 className="font-display font-semibold text-lg mb-2">Génère une synthèse IA</h3>
+                <p className="text-sm text-muted-foreground mb-4">Importe une image de ton cours et l'IA créera une synthèse</p>
+                <button onClick={() => setIsAIOpen(true)} className="prago-btn-primary">
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Générer
+                </button>
               </div>
             </div>
           )}
