@@ -116,46 +116,60 @@ Format exact :
   }
 };
 
-async function extractTextFromImage(imageBase64: string, visionApiKey: string): Promise<string> {
-  const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+async function extractTextFromImage(imageBase64: string): Promise<string> {
+  console.log("Extracting text from image using Gemini...");
   
-  console.log("Calling Vision API with key:", visionApiKey ? "present" : "missing");
-  
-  const visionResponse = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        requests: [
-          {
-            image: { content: base64Data },
-            features: [
-              { type: "TEXT_DETECTION" },
-              { type: "DOCUMENT_TEXT_DETECTION" },
-            ],
-          },
-        ],
-      }),
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    throw new Error("LOVABLE_API_KEY is not configured");
+  }
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Extrais tout le texte visible dans cette image. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageBase64
+              }
+            }
+          ]
+        }
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Gemini API error:", response.status, errorText);
+    
+    if (response.status === 429) {
+      throw new Error("Rate limit exceeded, please try again later");
     }
-  );
-
-  if (!visionResponse.ok) {
-    const errorText = await visionResponse.text();
-    console.error("Vision API error:", visionResponse.status, errorText);
-    throw new Error(`Vision API error: ${visionResponse.status} - ${errorText}`);
+    if (response.status === 402) {
+      throw new Error("Payment required, please add credits");
+    }
+    throw new Error(`AI service error: ${response.status}`);
   }
 
-  const visionData = await visionResponse.json();
+  const data = await response.json();
+  const extractedText = data.choices?.[0]?.message?.content || "";
   
-  if (visionData.responses?.[0]?.error) {
-    console.error("Vision API returned error:", visionData.responses[0].error);
-    throw new Error(`Vision API: ${visionData.responses[0].error.message}`);
-  }
-  
-  return visionData.responses?.[0]?.fullTextAnnotation?.text || 
-         visionData.responses?.[0]?.textAnnotations?.[0]?.description || 
-         "";
+  console.log("Extracted text length:", extractedText.length);
+  return extractedText;
 }
 
 Deno.serve(async (req) => {
@@ -196,16 +210,8 @@ Deno.serve(async (req) => {
 
     // Extract text from image if provided
     if (imageBase64) {
-      const visionApiKey = Deno.env.get("GOOGLE_CLOUD_VISION_API_KEY");
-      if (!visionApiKey) {
-        return new Response(
-          JSON.stringify({ error: "Vision service not configured" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       console.log("Extracting text from image...");
-      extractedText = await extractTextFromImage(imageBase64, visionApiKey);
+      extractedText = await extractTextFromImage(imageBase64);
       
       if (!extractedText) {
         return new Response(
