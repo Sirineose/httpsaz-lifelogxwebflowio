@@ -57,58 +57,75 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get Google Cloud Vision API key
-    const visionApiKey = Deno.env.get("GOOGLE_CLOUD_VISION_API_KEY");
-    if (!visionApiKey) {
-      console.error("GOOGLE_CLOUD_VISION_API_KEY is not set");
+    // Get Lovable API key for Gemini
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not set");
       return new Response(
-        JSON.stringify({ error: "Vision service not configured" }),
+        JSON.stringify({ error: "AI service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Remove data URL prefix if present
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    console.log("Extracting text from image using Gemini...");
 
-    console.log("Calling Google Cloud Vision API...");
+    // Step 1: Extract text from image using Gemini 2.5 Flash
+    const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Extrais tout le texte visible dans cette image. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageBase64
+                }
+              }
+            ]
+          }
+        ],
+      }),
+    });
 
-    // Step 1: Extract text from image using Google Cloud Vision
-    const visionResponse = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requests: [
-            {
-              image: { content: base64Data },
-              features: [
-                { type: "TEXT_DETECTION" },
-                { type: "DOCUMENT_TEXT_DETECTION" },
-              ],
-            },
-          ],
-        }),
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error("Gemini API error:", geminiResponse.status, errorText);
+      
+      if (geminiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Trop de requêtes, réessaye dans quelques instants." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-    );
-
-    if (!visionResponse.ok) {
-      const errorText = await visionResponse.text();
-      console.error("Vision API error:", errorText);
+      if (geminiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Crédits insuffisants, contacte l'administrateur." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
-        JSON.stringify({ error: "Vision service error" }),
+        JSON.stringify({ error: "Erreur du service IA" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const visionData = await visionResponse.json();
-    const extractedText = visionData.responses?.[0]?.fullTextAnnotation?.text || 
-                          visionData.responses?.[0]?.textAnnotations?.[0]?.description || 
-                          "";
+    const geminiData = await geminiResponse.json();
+    const extractedText = geminiData.choices?.[0]?.message?.content || "";
 
     console.log("Extracted text:", extractedText.substring(0, 100) + "...");
 
-    if (!extractedText) {
+    if (!extractedText || extractedText.trim().length === 0) {
       return new Response(
         JSON.stringify({ 
           error: "Aucun texte détecté dans l'image. Assure-toi que l'image est nette et bien éclairée." 
