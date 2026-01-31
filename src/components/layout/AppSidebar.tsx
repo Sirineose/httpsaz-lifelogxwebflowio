@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   HelpCircle,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { title: "Notes & Synthèses", href: "/notes", icon: FileText },
   { title: "Cours en BD", href: "/comics", icon: BookOpen },
   { title: "Exam Prep", href: "/exam-prep", icon: GraduationCap },
+  { title: "Tarifs", href: "/pricing", icon: CreditCard },
   { title: "Profil", href: "/profile", icon: User },
   { title: "FAQ & Aide", href: "/faq", icon: HelpCircle },
 ];
