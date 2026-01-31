@@ -1,4 +1,25 @@
+/**
+ * Chat AI Edge Function
+ * 
+ * SECURITY: This function implements OWASP best practices:
+ * - Rate limiting (IP + User based)
+ * - Input validation & sanitization
+ * - Proper authentication handling
+ * - No sensitive data exposure
+ */
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  checkRateLimit,
+  RATE_LIMITS,
+  safeParseJSON,
+  sanitizeString,
+  validateArray,
+  rejectUnexpectedFields,
+  errorResponse,
+  successResponse,
+  MAX_LENGTHS,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,15 +27,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Allowed fields in request body - reject anything else
+const ALLOWED_FIELDS = ["messages", "subject", "guestMode"];
+
+// Maximum messages in conversation to prevent abuse
+const MAX_MESSAGES = 50;
+const MAX_MESSAGE_LENGTH = 5000;
+
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
-}
-
-interface ChatRequest {
-  messages: Message[];
-  subject?: string;
-  guestMode?: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -23,19 +45,45 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const body: ChatRequest = await req.json();
-    const { messages, subject, guestMode } = body;
+  // Only allow POST
+  if (req.method !== "POST") {
+    return errorResponse(405, "Méthode non autorisée", corsHeaders);
+  }
 
-    // Allow guest mode without authentication
+  let userId: string | undefined;
+
+  try {
+    // =========================================================================
+    // RATE LIMITING - Apply before any processing
+    // =========================================================================
+    const rateLimitResponse = checkRateLimit(req, RATE_LIMITS.ai, undefined, corsHeaders);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // =========================================================================
+    // PARSE & VALIDATE JSON BODY
+    // =========================================================================
+    const { body, error: parseError } = await safeParseJSON(req, MAX_LENGTHS.json, corsHeaders);
+    if (parseError) return parseError;
+
+    // Reject unexpected fields (prevent parameter pollution)
+    const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS, corsHeaders);
+    if (unexpectedError) return unexpectedError;
+
+    const { messages, subject, guestMode } = body as {
+      messages?: unknown;
+      subject?: unknown;
+      guestMode?: unknown;
+    };
+
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
     if (!guestMode) {
-      // Verify authentication for non-guest requests
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(401, "Non autorisé", corsHeaders);
       }
 
       const supabase = createClient(
@@ -46,21 +94,79 @@ Deno.serve(async (req) => {
 
       const token = authHeader.replace("Bearer ", "");
       const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      
+
       if (claimsError || !claimsData?.claims) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(401, "Non autorisé", corsHeaders);
+      }
+
+      userId = claimsData.claims.sub as string;
+
+      // Re-check rate limit with user ID for more accurate limiting
+      const userRateLimitResponse = checkRateLimit(req, RATE_LIMITS.ai, userId, corsHeaders);
+      if (userRateLimitResponse) {
+        return userRateLimitResponse;
       }
     }
 
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(
-        JSON.stringify({ error: "Messages array is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // =========================================================================
+    // INPUT VALIDATION
+    // =========================================================================
+
+    // Validate messages array
+    const messagesValidation = validateArray<Message>(
+      messages,
+      "messages",
+      (item, index) => {
+        if (typeof item !== "object" || item === null) {
+          return { value: null, error: "doit être un objet" };
+        }
+
+        const msg = item as Record<string, unknown>;
+
+        // Validate role
+        if (!["user", "assistant", "system"].includes(msg.role as string)) {
+          return { value: null, error: "rôle invalide" };
+        }
+
+        // Validate and sanitize content
+        const contentValidation = sanitizeString(
+          msg.content,
+          MAX_MESSAGE_LENGTH,
+          `message[${index}].content`,
+          { required: true, allowNewlines: true }
+        );
+
+        if (contentValidation.error) {
+          return { value: null, error: contentValidation.error };
+        }
+
+        return {
+          value: {
+            role: msg.role as "user" | "assistant" | "system",
+            content: contentValidation.value!,
+          },
+          error: null,
+        };
+      },
+      { required: true, minLength: 1, maxLength: MAX_MESSAGES }
+    );
+
+    if (messagesValidation.error) {
+      return errorResponse(400, messagesValidation.error, corsHeaders);
     }
+
+    // Validate subject (optional)
+    const subjectValidation = sanitizeString(subject, MAX_LENGTHS.subject, "subject");
+    if (subjectValidation.error) {
+      return errorResponse(400, subjectValidation.error, corsHeaders);
+    }
+
+    const validatedMessages = messagesValidation.value!;
+    const validatedSubject = subjectValidation.value;
+
+    // =========================================================================
+    // CALL AI SERVICE
+    // =========================================================================
 
     // Build system prompt for educational assistant
     const systemPrompt = `Tu es PRAGO, un assistant pédagogique intelligent et bienveillant pour les étudiants francophones.
@@ -70,7 +176,7 @@ Ton rôle :
 - Expliquer les concepts de manière claire et adaptée à leur niveau
 - Fournir des exemples concrets et des analogies pour faciliter la compréhension
 - Encourager et motiver les étudiants dans leur apprentissage
-${subject ? `- Tu es spécialisé en ${subject} pour cette conversation` : ""}
+${validatedSubject ? `- Tu es spécialisé en ${validatedSubject} pour cette conversation` : ""}
 
 Règles :
 - Réponds toujours en français
@@ -81,25 +187,22 @@ Règles :
 
     const apiMessages = [
       { role: "system", content: systemPrompt },
-      ...messages,
+      ...validatedMessages,
     ];
 
-    // Call Mistral API
+    // Call Mistral API (key from environment, never exposed)
     const mistralApiKey = Deno.env.get("MISTRAL_API_KEY");
     if (!mistralApiKey) {
       console.error("MISTRAL_API_KEY is not set");
-      return new Response(
-        JSON.stringify({ error: "AI service not configured - MISTRAL_API_KEY missing" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Service IA non configuré", corsHeaders);
     }
 
-    console.log("Calling Mistral API...");
+    console.log(`Chat AI request: ${validatedMessages.length} messages, subject: ${validatedSubject || "none"}`);
 
     const aiResponse = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${mistralApiKey}`,
+        Authorization: `Bearer ${mistralApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -112,11 +215,13 @@ Règles :
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error("Mistral API error:", errorText);
-      return new Response(
-        JSON.stringify({ error: "AI service error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("Mistral API error:", aiResponse.status, errorText);
+
+      if (aiResponse.status === 429) {
+        return errorResponse(429, "Service IA surchargé, réessayez plus tard", corsHeaders);
+      }
+
+      return errorResponse(500, "Erreur du service IA", corsHeaders);
     }
 
     const aiData = await aiResponse.json();
@@ -124,26 +229,20 @@ Règles :
 
     if (!assistantMessage) {
       console.error("No response from AI:", aiData);
-      return new Response(
-        JSON.stringify({ error: "No response from AI" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Pas de réponse de l'IA", corsHeaders);
     }
 
     console.log("AI response received successfully");
 
-    return new Response(
-      JSON.stringify({
+    return successResponse(
+      {
         message: assistantMessage,
         role: "assistant",
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      },
+      corsHeaders
     );
   } catch (error) {
     console.error("Error in chat-ai function:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse(500, "Erreur interne du serveur", corsHeaders);
   }
 });

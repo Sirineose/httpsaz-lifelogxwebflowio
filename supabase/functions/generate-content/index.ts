@@ -1,4 +1,27 @@
+/**
+ * Generate Content Edge Function (Flashcards, Quiz, Synthesis, Comics)
+ * 
+ * SECURITY: This function implements OWASP best practices:
+ * - Rate limiting (IP + User based)
+ * - Input validation & sanitization
+ * - Content type validation
+ * - Proper authentication handling
+ */
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  checkRateLimit,
+  RATE_LIMITS,
+  safeParseJSON,
+  sanitizeString,
+  validateBase64DataUrl,
+  validateContentType,
+  validateNumber,
+  rejectUnexpectedFields,
+  errorResponse,
+  successResponse,
+  MAX_LENGTHS,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,23 +29,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Allowed fields in request body
+const ALLOWED_FIELDS = ["imageBase64", "textContent", "contentType", "subject", "guestMode", "options"];
+const ALLOWED_OPTION_FIELDS = ["count", "title"];
+
+// Limits
+const MAX_ITEMS = 20; // Max flashcards/quiz questions to generate
+const MIN_ITEMS = 1;
+const MAX_TEXT_LENGTH = 100000; // ~100KB text
+
 type ContentType = "flashcards" | "quiz" | "synthesis" | "comic";
 
-interface GenerateRequest {
-  imageBase64?: string;
-  textContent?: string;
-  contentType: ContentType;
-  subject?: string;
-  guestMode?: boolean;
-  options?: {
-    count?: number; // Number of items to generate
-    title?: string;
-  };
-}
-
-const getPromptForType = (contentType: ContentType, subject: string, options: any) => {
-  const count = options?.count || 5;
-  
+const getPromptForType = (contentType: ContentType, subject: string, count: number) => {
   switch (contentType) {
     case "flashcards":
       return {
@@ -44,7 +62,7 @@ Format exact :
 }`,
         user: (text: string) => `Crée ${count} flashcards à partir de ce contenu :\n\n${text}`,
       };
-      
+
     case "quiz":
       return {
         system: `Tu es PRAGO, un expert en création de quiz éducatifs.
@@ -69,7 +87,7 @@ Format exact :
 }`,
         user: (text: string) => `Crée ${count} questions de quiz à partir de ce contenu :\n\n${text}`,
       };
-      
+
     case "synthesis":
       return {
         system: `Tu es PRAGO, un expert en création de synthèses éducatives.
@@ -91,7 +109,7 @@ Format exact :
 }`,
         user: (text: string) => `Crée une synthèse à partir de ce contenu :\n\n${text}`,
       };
-      
+
     case "comic":
       return {
         system: `Tu es PRAGO, un expert en création de BD éducatives.
@@ -116,18 +134,13 @@ Format exact :
   }
 };
 
-async function extractTextFromImage(imageBase64: string): Promise<string> {
+async function extractTextFromImage(imageBase64: string, apiKey: string): Promise<string> {
   console.log("Extracting text from image using Gemini...");
-  
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY is not configured");
-  }
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -138,16 +151,14 @@ async function extractTextFromImage(imageBase64: string): Promise<string> {
           content: [
             {
               type: "text",
-              text: "Extrais tout le texte visible dans cette image. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel."
+              text: "Extrais tout le texte visible dans cette image. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel.",
             },
             {
               type: "image_url",
-              image_url: {
-                url: imageBase64
-              }
-            }
-          ]
-        }
+              image_url: { url: imageBase64 },
+            },
+          ],
+        },
       ],
     }),
   });
@@ -155,19 +166,19 @@ async function extractTextFromImage(imageBase64: string): Promise<string> {
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Gemini API error:", response.status, errorText);
-    
+
     if (response.status === 429) {
-      throw new Error("Rate limit exceeded, please try again later");
+      throw new Error("RATE_LIMIT");
     }
     if (response.status === 402) {
-      throw new Error("Payment required, please add credits");
+      throw new Error("PAYMENT_REQUIRED");
     }
     throw new Error(`AI service error: ${response.status}`);
   }
 
   const data = await response.json();
   const extractedText = data.choices?.[0]?.message?.content || "";
-  
+
   console.log("Extracted text length:", extractedText.length);
   return extractedText;
 }
@@ -177,68 +188,186 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const body: GenerateRequest = await req.json();
-    const { imageBase64, textContent, contentType, subject, guestMode, options } = body;
+  if (req.method !== "POST") {
+    return errorResponse(405, "Méthode non autorisée", corsHeaders);
+  }
 
-    // Auth check for non-guest mode
+  let userId: string | undefined;
+
+  try {
+    // =========================================================================
+    // RATE LIMITING
+    // =========================================================================
+    const rateLimitResponse = checkRateLimit(req, RATE_LIMITS.ai, undefined, corsHeaders);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // =========================================================================
+    // PARSE & VALIDATE JSON BODY
+    // =========================================================================
+    const { body, error: parseError } = await safeParseJSON(
+      req,
+      MAX_LENGTHS.pdfBase64 + 1000,
+      corsHeaders
+    );
+    if (parseError) return parseError;
+
+    // Reject unexpected fields
+    const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS, corsHeaders);
+    if (unexpectedError) return unexpectedError;
+
+    const { imageBase64, textContent, contentType, subject, guestMode, options } = body as {
+      imageBase64?: unknown;
+      textContent?: unknown;
+      contentType?: unknown;
+      subject?: unknown;
+      guestMode?: unknown;
+      options?: unknown;
+    };
+
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
     if (!guestMode) {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(401, "Non autorisé", corsHeaders);
+      }
+
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+
+      if (claimsError || !claimsData?.claims) {
+        return errorResponse(401, "Non autorisé", corsHeaders);
+      }
+
+      userId = claimsData.claims.sub as string;
+
+      // Re-check rate limit with user ID
+      const userRateLimitResponse = checkRateLimit(req, RATE_LIMITS.ai, userId, corsHeaders);
+      if (userRateLimitResponse) {
+        return userRateLimitResponse;
       }
     }
 
-    if (!imageBase64 && !textContent) {
-      return new Response(
-        JSON.stringify({ error: "Image or text content is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // =========================================================================
+    // INPUT VALIDATION
+    // =========================================================================
+
+    // Validate content type
+    const contentTypeValidation = validateContentType(contentType);
+    if (contentTypeValidation.error) {
+      return errorResponse(400, contentTypeValidation.error, corsHeaders);
+    }
+    const validatedContentType = contentTypeValidation.value!;
+
+    // Validate options
+    let count = 5;
+    if (options && typeof options === "object") {
+      // Check for unexpected option fields
+      const optionsObj = options as Record<string, unknown>;
+      const unexpectedOptions = Object.keys(optionsObj).filter(k => !ALLOWED_OPTION_FIELDS.includes(k));
+      if (unexpectedOptions.length > 0) {
+        return errorResponse(400, "Options invalides", corsHeaders);
+      }
+
+      const countValidation = validateNumber(optionsObj.count, "count", {
+        min: MIN_ITEMS,
+        max: MAX_ITEMS,
+        integer: true,
+      });
+      if (countValidation.error) {
+        return errorResponse(400, countValidation.error, corsHeaders);
+      }
+      if (countValidation.value !== null) {
+        count = countValidation.value;
+      }
     }
 
-    if (!contentType) {
-      return new Response(
-        JSON.stringify({ error: "Content type is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Validate subject
+    const subjectValidation = sanitizeString(subject, MAX_LENGTHS.subject, "subject");
+    if (subjectValidation.error) {
+      return errorResponse(400, subjectValidation.error, corsHeaders);
+    }
+    const validatedSubject = subjectValidation.value || "";
+
+    // Validate image or text (one required)
+    let validatedImageBase64: string | null = null;
+    let validatedTextContent: string | null = null;
+
+    if (imageBase64) {
+      const imageValidation = validateBase64DataUrl(imageBase64, "Image", {
+        maxSize: MAX_LENGTHS.imageBase64,
+      });
+      if (imageValidation.error) {
+        return errorResponse(400, imageValidation.error, corsHeaders);
+      }
+      validatedImageBase64 = imageValidation.value;
     }
 
-    let extractedText = textContent || "";
+    if (textContent) {
+      const textValidation = sanitizeString(textContent, MAX_TEXT_LENGTH, "textContent", {
+        allowNewlines: true,
+      });
+      if (textValidation.error) {
+        return errorResponse(400, textValidation.error, corsHeaders);
+      }
+      validatedTextContent = textValidation.value;
+    }
+
+    if (!validatedImageBase64 && !validatedTextContent) {
+      return errorResponse(400, "Image ou texte requis", corsHeaders);
+    }
+
+    // =========================================================================
+    // CALL AI SERVICE
+    // =========================================================================
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return errorResponse(500, "Service IA non configuré", corsHeaders);
+    }
+
+    let extractedText = validatedTextContent || "";
 
     // Extract text from image if provided
-    if (imageBase64) {
+    if (validatedImageBase64) {
       console.log("Extracting text from image...");
-      extractedText = await extractTextFromImage(imageBase64);
-      
+      try {
+        extractedText = await extractTextFromImage(validatedImageBase64, LOVABLE_API_KEY);
+      } catch (err) {
+        const errMsg = (err as Error).message;
+        if (errMsg === "RATE_LIMIT") {
+          return errorResponse(429, "Trop de requêtes, réessayez plus tard", corsHeaders);
+        }
+        if (errMsg === "PAYMENT_REQUIRED") {
+          return errorResponse(402, "Crédits insuffisants", corsHeaders);
+        }
+        throw err;
+      }
+
       if (!extractedText) {
-        return new Response(
-          JSON.stringify({ error: "Aucun texte détecté dans l'image" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(400, "Aucun texte détecté dans l'image", corsHeaders);
       }
       console.log("Extracted text:", extractedText.substring(0, 100) + "...");
     }
 
-    // Generate content with Lovable AI Gateway (Gemini)
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Generate content
+    const prompt = getPromptForType(validatedContentType, validatedSubject, count);
 
-    const prompt = getPromptForType(contentType, subject || "", options || {});
-    
-    console.log(`Generating ${contentType} with Gemini...`);
+    console.log(`Generating ${validatedContentType} with Gemini...`);
 
     const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -255,33 +384,21 @@ Deno.serve(async (req) => {
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
       console.error("Gemini API error:", geminiResponse.status, errorText);
-      
+
       if (geminiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Trop de requêtes, réessaye dans quelques instants." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(429, "Trop de requêtes, réessayez plus tard", corsHeaders);
       }
       if (geminiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Crédits insuffisants." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(402, "Crédits insuffisants", corsHeaders);
       }
-      return new Response(
-        JSON.stringify({ error: "AI service error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Erreur du service IA", corsHeaders);
     }
 
     const geminiData = await geminiResponse.json();
     const generatedContent = geminiData.choices?.[0]?.message?.content;
 
     if (!generatedContent) {
-      return new Response(
-        JSON.stringify({ error: "No content generated" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Pas de contenu généré", corsHeaders);
     }
 
     console.log("Raw AI response:", generatedContent.substring(0, 200));
@@ -289,7 +406,6 @@ Deno.serve(async (req) => {
     // Parse JSON response
     let parsedContent;
     try {
-      // Try to extract JSON from the response
       const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedContent = JSON.parse(jsonMatch[0]);
@@ -298,28 +414,22 @@ Deno.serve(async (req) => {
       }
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
-      return new Response(
-        JSON.stringify({ error: "Failed to parse AI response", raw: generatedContent }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Échec de l'analyse de la réponse IA", corsHeaders);
     }
 
-    console.log(`Generated ${contentType} successfully`);
+    console.log(`Generated ${validatedContentType} successfully`);
 
-    return new Response(
-      JSON.stringify({
+    return successResponse(
+      {
         success: true,
-        contentType,
-        extractedText: imageBase64 ? extractedText : undefined,
+        contentType: validatedContentType,
+        extractedText: validatedImageBase64 ? extractedText : undefined,
         data: parsedContent,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      },
+      corsHeaders
     );
   } catch (error) {
     console.error("Error in generate-content function:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse(500, "Erreur interne du serveur", corsHeaders);
   }
 });

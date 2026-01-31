@@ -1,87 +1,159 @@
+/**
+ * Stripe Checkout Edge Function
+ * 
+ * SECURITY: This function implements OWASP best practices:
+ * - Rate limiting
+ * - Authentication required (no guest mode)
+ * - Input validation & sanitization
+ * - Server-side user identity (never trust client)
+ */
+
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  checkRateLimit,
+  RATE_LIMITS,
+  safeParseJSON,
+  sanitizeString,
+  rejectUnexpectedFields,
+  errorResponse,
+  successResponse,
+  MAX_LENGTHS,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-  apiVersion: '2023-10-16',
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+  apiVersion: "2023-10-16",
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-// Price IDs - À configurer dans Stripe Dashboard
+// Price IDs - configured via environment
 const PRICE_IDS = {
-  essential_monthly: Deno.env.get('STRIPE_PRICE_ESSENTIAL_MONTHLY') || 'price_essential_monthly',
-  pro_monthly: Deno.env.get('STRIPE_PRICE_PRO_MONTHLY') || 'price_pro_monthly',
-  ultimate_monthly: Deno.env.get('STRIPE_PRICE_ULTIMATE_MONTHLY') || 'price_ultimate_monthly',
+  essential_monthly: Deno.env.get("STRIPE_PRICE_ESSENTIAL_MONTHLY") || "price_essential_monthly",
+  pro_monthly: Deno.env.get("STRIPE_PRICE_PRO_MONTHLY") || "price_pro_monthly",
+  ultimate_monthly: Deno.env.get("STRIPE_PRICE_ULTIMATE_MONTHLY") || "price_ultimate_monthly",
 };
 
+// Allowed fields per route
+const ALLOWED_FIELDS_CHECKOUT = ["priceId", "successUrl", "cancelUrl"];
+const ALLOWED_FIELDS_PORTAL = ["returnUrl"];
+const ALLOWED_FIELDS_STATUS: string[] = [];
+
 // Helper function to authenticate user
-async function authenticateUser(req: Request): Promise<{ user: { id: string; email: string } | null; error: string | null }> {
-  const authHeader = req.headers.get('Authorization');
-  
-  if (!authHeader?.startsWith('Bearer ')) {
-    return { user: null, error: 'Missing or invalid authorization header' };
+async function authenticateUser(
+  req: Request
+): Promise<{ user: { id: string; email: string } | null; error: string | null }> {
+  const authHeader = req.headers.get("Authorization");
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { user: null, error: "Missing or invalid authorization header" };
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
+    global: { headers: { Authorization: authHeader } },
   });
 
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace("Bearer ", "");
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data?.user) {
-    console.error('Auth error:', error?.message);
-    return { user: null, error: 'Unauthorized' };
+    console.error("Auth error:", error?.message);
+    return { user: null, error: "Unauthorized" };
   }
 
-  return { 
-    user: { 
-      id: data.user.id, 
-      email: data.user.email || '' 
-    }, 
-    error: null 
+  return {
+    user: {
+      id: data.user.id,
+      email: data.user.email || "",
+    },
+    error: null,
   };
 }
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Only allow POST
+  if (req.method !== "POST") {
+    return errorResponse(405, "Méthode non autorisée", corsHeaders);
   }
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
-
-    // Authenticate user for all routes
-    const { user, error: authError } = await authenticateUser(req);
-    
-    if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // =========================================================================
+    // RATE LIMITING
+    // =========================================================================
+    const rateLimitResponse = checkRateLimit(req, RATE_LIMITS.standard, undefined, corsHeaders);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
-    console.log('Authenticated user:', user.id, user.email);
+    // =========================================================================
+    // AUTHENTICATION (required for all Stripe routes)
+    // =========================================================================
+    const { user, error: authError } = await authenticateUser(req);
+
+    if (authError || !user) {
+      console.error("Authentication failed:", authError);
+      return errorResponse(401, "Non autorisé", corsHeaders);
+    }
+
+    console.log("Authenticated user:", user.id);
+
+    // Re-check rate limit with user ID
+    const userRateLimitResponse = checkRateLimit(req, RATE_LIMITS.standard, user.id, corsHeaders);
+    if (userRateLimitResponse) {
+      return userRateLimitResponse;
+    }
+
+    // =========================================================================
+    // ROUTE HANDLING
+    // =========================================================================
+
+    const url = new URL(req.url);
+    const path = url.pathname.split("/").pop();
 
     // Route: Create checkout session
-    if (path === 'create-checkout' && req.method === 'POST') {
-      const { priceId, successUrl, cancelUrl } = await req.json();
+    if (path === "create-checkout") {
+      const { body, error: parseError } = await safeParseJSON(req, MAX_LENGTHS.json, corsHeaders);
+      if (parseError) return parseError;
+
+      const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS_CHECKOUT, corsHeaders);
+      if (unexpectedError) return unexpectedError;
+
+      const { priceId, successUrl, cancelUrl } = body as Record<string, unknown>;
+
+      // Validate priceId
+      const priceValidation = sanitizeString(priceId, 100, "priceId", { required: true });
+      if (priceValidation.error) {
+        return errorResponse(400, priceValidation.error, corsHeaders);
+      }
+
+      // Validate URLs
+      const successUrlValidation = sanitizeString(successUrl, MAX_LENGTHS.url, "successUrl");
+      const cancelUrlValidation = sanitizeString(cancelUrl, MAX_LENGTHS.url, "cancelUrl");
+
+      if (successUrlValidation.error) {
+        return errorResponse(400, successUrlValidation.error, corsHeaders);
+      }
+      if (cancelUrlValidation.error) {
+        return errorResponse(400, cancelUrlValidation.error, corsHeaders);
+      }
 
       // Use authenticated user's email and ID - ignore client-provided values
       const email = user.email;
       const userId = user.id;
 
-      console.log('Creating checkout session for authenticated user:', { priceId, userId, email });
+      console.log("Creating checkout session for authenticated user:", { priceId: priceValidation.value, userId });
 
       // Check if customer already exists
       let customerId: string | undefined;
@@ -93,16 +165,16 @@ Deno.serve(async (req) => {
       }
 
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        payment_method_types: ['card'],
-        mode: 'subscription',
+        payment_method_types: ["card"],
+        mode: "subscription",
         line_items: [
           {
-            price: priceId,
+            price: priceValidation.value!,
             quantity: 1,
           },
         ],
-        success_url: successUrl || `${req.headers.get('origin')}/dashboard?success=true`,
-        cancel_url: cancelUrl || `${req.headers.get('origin')}/pricing?canceled=true`,
+        success_url: successUrlValidation.value || `${req.headers.get("origin")}/dashboard?success=true`,
+        cancel_url: cancelUrlValidation.value || `${req.headers.get("origin")}/pricing?canceled=true`,
         metadata: {
           user_id: userId,
         },
@@ -116,89 +188,94 @@ Deno.serve(async (req) => {
 
       const session = await stripe.checkout.sessions.create(sessionParams);
 
-      console.log('Checkout session created:', session.id);
+      console.log("Checkout session created:", session.id);
 
-      return new Response(
-        JSON.stringify({ sessionId: session.id, url: session.url }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return successResponse({ sessionId: session.id, url: session.url }, corsHeaders);
     }
 
     // Route: Create customer portal session
-    if (path === 'customer-portal' && req.method === 'POST') {
-      const { returnUrl } = await req.json();
+    if (path === "customer-portal") {
+      const { body, error: parseError } = await safeParseJSON(req, MAX_LENGTHS.json, corsHeaders);
+      if (parseError) return parseError;
+
+      const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS_PORTAL, corsHeaders);
+      if (unexpectedError) return unexpectedError;
+
+      const { returnUrl } = body as Record<string, unknown>;
+
+      // Validate returnUrl
+      const returnUrlValidation = sanitizeString(returnUrl, MAX_LENGTHS.url, "returnUrl");
+      if (returnUrlValidation.error) {
+        return errorResponse(400, returnUrlValidation.error, corsHeaders);
+      }
 
       // Get customer ID from Stripe using authenticated user's email
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-      
+
       if (customers.data.length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'No Stripe customer found for this account' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse(404, "Aucun client Stripe trouvé pour ce compte", corsHeaders);
       }
 
       const customerId = customers.data[0].id;
-      console.log('Creating portal session for authenticated customer:', customerId);
+      console.log("Creating portal session for authenticated customer:", customerId);
 
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: returnUrl || `${req.headers.get('origin')}/profile`,
+        return_url: returnUrlValidation.value || `${req.headers.get("origin")}/profile`,
       });
 
-      return new Response(
-        JSON.stringify({ url: session.url }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return successResponse({ url: session.url }, corsHeaders);
     }
 
     // Route: Get subscription status
-    if (path === 'subscription-status' && req.method === 'POST') {
-      // Use authenticated user's email - ignore client-provided email
-      const email = user.email;
+    if (path === "subscription-status") {
+      // Minimal body expected
+      const { body, error: parseError } = await safeParseJSON(req, MAX_LENGTHS.json, corsHeaders);
+      if (parseError) return parseError;
 
-      console.log('Checking subscription for authenticated user:', email);
+      const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS_STATUS, corsHeaders);
+      if (unexpectedError) return unexpectedError;
+
+      const email = user.email;
+      console.log("Checking subscription for authenticated user:", email);
 
       const customers = await stripe.customers.list({ email, limit: 1 });
-      
+
       if (customers.data.length === 0) {
-        return new Response(
-          JSON.stringify({ subscription: null, plan: 'free' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({ subscription: null, plan: "free" }, corsHeaders);
       }
 
       const subscriptions = await stripe.subscriptions.list({
         customer: customers.data[0].id,
-        status: 'active',
+        status: "active",
         limit: 1,
       });
 
       if (subscriptions.data.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            subscription: null, 
-            plan: 'free',
-            customerId: customers.data[0].id 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        return successResponse(
+          {
+            subscription: null,
+            plan: "free",
+            customerId: customers.data[0].id,
+          },
+          corsHeaders
         );
       }
 
       const subscription = subscriptions.data[0];
       const priceId = subscription.items.data[0]?.price.id;
-      
-      let plan = 'free';
+
+      let plan = "free";
       if (priceId === PRICE_IDS.essential_monthly) {
-        plan = 'essential';
+        plan = "essential";
       } else if (priceId === PRICE_IDS.pro_monthly) {
-        plan = 'pro';
+        plan = "pro";
       } else if (priceId === PRICE_IDS.ultimate_monthly) {
-        plan = 'ultimate';
+        plan = "ultimate";
       }
 
-      return new Response(
-        JSON.stringify({
+      return successResponse(
+        {
           subscription: {
             id: subscription.id,
             status: subscription.status,
@@ -207,22 +284,15 @@ Deno.serve(async (req) => {
           },
           plan,
           customerId: customers.data[0].id,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        },
+        corsHeaders
       );
     }
 
-    return new Response(
-      JSON.stringify({ error: 'Route not found' }),
-      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return errorResponse(404, "Route non trouvée", corsHeaders);
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Stripe error:', errorMessage);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Stripe error:", errorMessage);
+    return errorResponse(500, "Erreur du service de paiement", corsHeaders);
   }
 });

@@ -1,4 +1,26 @@
+/**
+ * Generate Study Plan Edge Function
+ * 
+ * SECURITY: This function implements OWASP best practices:
+ * - Rate limiting (IP + User based)
+ * - Input validation & sanitization
+ * - Proper authentication handling
+ */
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  checkRateLimit,
+  RATE_LIMITS,
+  safeParseJSON,
+  sanitizeString,
+  validateUUID,
+  validateNumber,
+  validateArray,
+  rejectUnexpectedFields,
+  errorResponse,
+  successResponse,
+  MAX_LENGTHS,
+} from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,29 +28,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Allowed fields in request body
+const ALLOWED_FIELDS = [
+  "examId",
+  "examTitle",
+  "examSubject",
+  "examDate",
+  "topics",
+  "availableHoursPerDay",
+  "preferredStartTime",
+  "guestMode",
+];
+
+// Limits
+const MAX_TOPICS = 50;
+const MAX_HOURS_PER_DAY = 12;
+const MIN_HOURS_PER_DAY = 0.5;
+
+// Time format regex (HH:MM)
+const TIME_REGEX = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+
+// Date format regex (YYYY-MM-DD)
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
 interface ExamTopic {
   name: string;
   completed: boolean;
-}
-
-interface GeneratePlanRequest {
-  examId: string;
-  examTitle: string;
-  examSubject: string;
-  examDate: string;
-  topics: ExamTopic[];
-  availableHoursPerDay?: number;
-  preferredStartTime?: string;
-  guestMode?: boolean;
-}
-
-interface StudySessionSuggestion {
-  date: string;
-  startTime: string;
-  endTime: string;
-  subject: string;
-  topic: string;
-  description: string;
 }
 
 Deno.serve(async (req) => {
@@ -36,27 +61,49 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const body: GeneratePlanRequest = await req.json();
-    const { 
-      examId, 
-      examTitle, 
-      examSubject, 
-      examDate, 
-      topics, 
-      availableHoursPerDay = 2,
-      preferredStartTime = "18:00",
-      guestMode 
-    } = body;
+  if (req.method !== "POST") {
+    return errorResponse(405, "Méthode non autorisée", corsHeaders);
+  }
 
-    // Allow guest mode without authentication
+  let userId: string | undefined;
+
+  try {
+    // =========================================================================
+    // RATE LIMITING
+    // =========================================================================
+    const rateLimitResponse = checkRateLimit(req, RATE_LIMITS.ai, undefined, corsHeaders);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // =========================================================================
+    // PARSE & VALIDATE JSON BODY
+    // =========================================================================
+    const { body, error: parseError } = await safeParseJSON(req, MAX_LENGTHS.json, corsHeaders);
+    if (parseError) return parseError;
+
+    // Reject unexpected fields
+    const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS, corsHeaders);
+    if (unexpectedError) return unexpectedError;
+
+    const {
+      examId,
+      examTitle,
+      examSubject,
+      examDate,
+      topics,
+      availableHoursPerDay,
+      preferredStartTime,
+      guestMode,
+    } = body as Record<string, unknown>;
+
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
     if (!guestMode) {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(401, "Non autorisé", corsHeaders);
       }
 
       const supabase = createClient(
@@ -66,41 +113,141 @@ Deno.serve(async (req) => {
       );
 
       const token = authHeader.replace("Bearer ", "");
-      const { error: claimsError } = await supabase.auth.getClaims(token);
-      
-      if (claimsError) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      const { error: claimsError, data: claimsData } = await supabase.auth.getClaims(token);
+
+      if (claimsError || !claimsData?.claims) {
+        return errorResponse(401, "Non autorisé", corsHeaders);
+      }
+
+      userId = claimsData.claims.sub as string;
+
+      // Re-check rate limit with user ID
+      const userRateLimitResponse = checkRateLimit(req, RATE_LIMITS.ai, userId, corsHeaders);
+      if (userRateLimitResponse) {
+        return userRateLimitResponse;
       }
     }
 
+    // =========================================================================
+    // INPUT VALIDATION
+    // =========================================================================
+
+    // Validate examId
+    const examIdValidation = validateUUID(examId, "examId");
+    if (examIdValidation.error) {
+      return errorResponse(400, examIdValidation.error, corsHeaders);
+    }
+    const validatedExamId = examIdValidation.value!;
+
+    // Validate examTitle
+    const titleValidation = sanitizeString(examTitle, MAX_LENGTHS.name, "examTitle", { required: true });
+    if (titleValidation.error) {
+      return errorResponse(400, titleValidation.error, corsHeaders);
+    }
+    const validatedTitle = titleValidation.value!;
+
+    // Validate examSubject
+    const subjectValidation = sanitizeString(examSubject, MAX_LENGTHS.subject, "examSubject", { required: true });
+    if (subjectValidation.error) {
+      return errorResponse(400, subjectValidation.error, corsHeaders);
+    }
+    const validatedSubject = subjectValidation.value!;
+
+    // Validate examDate
+    const dateValidation = sanitizeString(examDate, 10, "examDate", {
+      required: true,
+      pattern: DATE_REGEX,
+    });
+    if (dateValidation.error) {
+      return errorResponse(400, "Format de date invalide (YYYY-MM-DD)", corsHeaders);
+    }
+    const validatedDate = dateValidation.value!;
+
+    // Validate date is in the future
+    const examDateObj = new Date(validatedDate);
+    if (isNaN(examDateObj.getTime())) {
+      return errorResponse(400, "Date d'examen invalide", corsHeaders);
+    }
+
+    // Validate topics array
+    const topicsValidation = validateArray<ExamTopic>(
+      topics,
+      "topics",
+      (item) => {
+        if (typeof item !== "object" || item === null) {
+          return { value: null, error: "doit être un objet" };
+        }
+
+        const topic = item as Record<string, unknown>;
+
+        const nameValidation = sanitizeString(topic.name, MAX_LENGTHS.name, "name", { required: true });
+        if (nameValidation.error) {
+          return { value: null, error: nameValidation.error };
+        }
+
+        return {
+          value: {
+            name: nameValidation.value!,
+            completed: topic.completed === true,
+          },
+          error: null,
+        };
+      },
+      { required: true, minLength: 1, maxLength: MAX_TOPICS }
+    );
+
+    if (topicsValidation.error) {
+      return errorResponse(400, topicsValidation.error, corsHeaders);
+    }
+    const validatedTopics = topicsValidation.value!;
+
+    // Validate availableHoursPerDay
+    const hoursValidation = validateNumber(availableHoursPerDay, "availableHoursPerDay", {
+      min: MIN_HOURS_PER_DAY,
+      max: MAX_HOURS_PER_DAY,
+    });
+    if (hoursValidation.error) {
+      return errorResponse(400, hoursValidation.error, corsHeaders);
+    }
+    const validatedHours = hoursValidation.value ?? 2;
+
+    // Validate preferredStartTime
+    let validatedStartTime = "18:00";
+    if (preferredStartTime) {
+      const timeValidation = sanitizeString(preferredStartTime, 5, "preferredStartTime", {
+        pattern: TIME_REGEX,
+      });
+      if (timeValidation.error) {
+        return errorResponse(400, "Format d'heure invalide (HH:MM)", corsHeaders);
+      }
+      validatedStartTime = timeValidation.value || "18:00";
+    }
+
+    // =========================================================================
+    // CALL AI SERVICE
+    // =========================================================================
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Service IA non configuré", corsHeaders);
     }
 
     // Filter incomplete topics
-    const incompleteTopics = topics.filter(t => !t.completed);
+    const incompleteTopics = validatedTopics.filter((t) => !t.completed);
     if (incompleteTopics.length === 0) {
-      return new Response(
-        JSON.stringify({ 
+      return successResponse(
+        {
           sessions: [],
-          advice: "Félicitations ! Tu as terminé tous les chapitres. Continue à réviser pour consolider tes acquis."
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          advice: "Félicitations ! Tu as terminé tous les chapitres. Continue à réviser pour consolider tes acquis.",
+        },
+        corsHeaders
       );
     }
 
     const today = new Date();
-    const exam = new Date(examDate);
-    const daysRemaining = Math.max(1, Math.ceil((exam.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+    const daysRemaining = Math.max(1, Math.ceil((examDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
-    console.log(`Generating study plan for ${examTitle} - ${incompleteTopics.length} topics, ${daysRemaining} days`);
+    console.log(`Generating study plan for ${validatedTitle} - ${incompleteTopics.length} topics, ${daysRemaining} days`);
 
     const systemPrompt = `Tu es PRAGO, un expert en planification de révisions. Tu dois créer un planning de révision optimal.
 
@@ -129,16 +276,16 @@ FORMAT DE RÉPONSE (JSON strict):
 }`;
 
     const userPrompt = `Crée un planning de révision pour:
-- Examen: ${examTitle}
-- Matière: ${examSubject}
-- Date de l'examen: ${examDate}
+- Examen: ${validatedTitle}
+- Matière: ${validatedSubject}
+- Date de l'examen: ${validatedDate}
 - Jours restants: ${daysRemaining}
-- Heures disponibles par jour: ${availableHoursPerDay}h
-- Heure de début préférée: ${preferredStartTime}
-- Date d'aujourd'hui: ${today.toISOString().split('T')[0]}
+- Heures disponibles par jour: ${validatedHours}h
+- Heure de début préférée: ${validatedStartTime}
+- Date d'aujourd'hui: ${today.toISOString().split("T")[0]}
 
 Chapitres à réviser (${incompleteTopics.length}):
-${incompleteTopics.map((t, i) => `${i + 1}. ${t.name}`).join('\n')}
+${incompleteTopics.map((t, i) => `${i + 1}. ${t.name}`).join("\n")}
 
 Génère un planning réaliste et efficace.`;
 
@@ -162,34 +309,24 @@ Génère un planning réaliste et efficace.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI API error:", response.status, errorText);
-      
+
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Trop de requêtes, réessaye dans quelques instants." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(429, "Trop de requêtes, réessayez plus tard", corsHeaders);
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Crédits insuffisants." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(402, "Crédits insuffisants", corsHeaders);
       }
-      return new Response(
-        JSON.stringify({ error: "Erreur du service IA" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse(500, "Erreur du service IA", corsHeaders);
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
-    
+
     console.log("AI response:", content.substring(0, 200));
 
     // Parse JSON from response
     let planData;
     try {
-      // Try to extract JSON from the response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         planData = JSON.parse(jsonMatch[0]);
@@ -198,28 +335,25 @@ Génère un planning réaliste et efficace.`;
       }
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
-      return new Response(
-        JSON.stringify({ 
+      return successResponse(
+        {
           sessions: [],
-          advice: "Je n'ai pas pu générer un planning automatique. Essaie de créer tes sessions manuellement."
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          advice: "Je n'ai pas pu générer un planning automatique. Essaie de créer tes sessions manuellement.",
+        },
+        corsHeaders
       );
     }
 
-    return new Response(
-      JSON.stringify({
+    return successResponse(
+      {
         sessions: planData.sessions || [],
         advice: planData.advice || "Bonne révision !",
-        examId,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        examId: validatedExamId,
+      },
+      corsHeaders
     );
   } catch (error) {
     console.error("Error in generate-study-plan:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse(500, "Erreur interne du serveur", corsHeaders);
   }
 });
