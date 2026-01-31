@@ -55,11 +55,21 @@ export function LargePDFUpload({
       return;
     }
 
+    const isGuest = localStorage.getItem("prago_guest_mode") === "true";
+    
     setIsUploading(true);
     onProcessing?.(true);
     setUploadProgress(0);
 
     try {
+      // Pour les gros fichiers en mode invité, demander de se connecter
+      if (file.size > MAX_BASE64_SIZE && isGuest) {
+        setError("Les PDF volumineux (>10MB) nécessitent un compte. Connectez-vous pour continuer.");
+        setIsUploading(false);
+        onProcessing?.(false);
+        return;
+      }
+      
       // Pour les petits fichiers, utiliser directement base64
       if (file.size <= MAX_BASE64_SIZE) {
         setProcessingStatus("Lecture du fichier...");
@@ -72,7 +82,7 @@ export function LargePDFUpload({
         
         onFileProcessed(result);
       } else {
-        // Pour les gros fichiers, upload vers Storage puis traiter
+        // Pour les gros fichiers (utilisateur connecté), upload vers Storage puis traiter
         setProcessingStatus("Upload du fichier volumineux...");
         const storagePath = await uploadToStorage(file);
         setUploadProgress(40);
