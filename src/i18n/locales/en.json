@@ -73,7 +73,7 @@
     "currentPlan": "Current plan",
     "perMonth": "/month",
     "startFree": "Start for free",
-    "freeTrial": "7-day free trial",
+    "subscribe": "Subscribe",
     "upgrade": "Upgrade to this plan",
     "faq": "Frequently asked questions",
     "moreFaq": "Need more info?",
@@ -146,10 +146,6 @@
       "commitment": {
         "question": "Is there a commitment?",
         "answer": "No, all our plans are commitment-free. You can cancel at any time."
-      },
-      "trial": {
-        "question": "How does the free trial work?",
-        "answer": "The 7-day Pro trial gives you access to all features. No credit card required."
       }
     }
   },
