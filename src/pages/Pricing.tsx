@@ -8,13 +8,6 @@ import { useStripe } from "@/hooks/useStripe";
 import { toast } from "sonner";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
-// Price IDs - À configurer dans Stripe Dashboard
-const STRIPE_PRICE_IDS = {
-  essential: 'price_essential_monthly',
-  pro: 'price_pro_monthly',
-  ultimate: 'price_ultimate_monthly',
-};
-
 type PlanKey = 'free' | 'essential' | 'pro' | 'ultimate';
 
 interface Plan {
@@ -22,7 +15,6 @@ interface Plan {
   price: string;
   icon: typeof Zap;
   popular: boolean;
-  priceId: string | null;
   ctaKey: string;
   ctaVariant: 'primary' | 'secondary';
 }
@@ -33,7 +25,6 @@ const plans: Plan[] = [
     price: "0",
     icon: Zap,
     popular: false,
-    priceId: null,
     ctaKey: "startFree",
     ctaVariant: "secondary",
   },
@@ -42,7 +33,6 @@ const plans: Plan[] = [
     price: "99",
     icon: Star,
     popular: false,
-    priceId: STRIPE_PRICE_IDS.essential,
     ctaKey: "freeTrial",
     ctaVariant: "secondary",
   },
@@ -51,7 +41,6 @@ const plans: Plan[] = [
     price: "120",
     icon: Sparkles,
     popular: true,
-    priceId: STRIPE_PRICE_IDS.pro,
     ctaKey: "freeTrial",
     ctaVariant: "primary",
   },
@@ -60,7 +49,6 @@ const plans: Plan[] = [
     price: "189",
     icon: Crown,
     popular: false,
-    priceId: STRIPE_PRICE_IDS.ultimate,
     ctaKey: "upgrade",
     ctaVariant: "primary",
   },
@@ -73,8 +61,8 @@ export default function Pricing() {
   const { loading, plan: currentPlan, createCheckoutSession } = useStripe();
   const isRTL = i18n.language === 'ar';
 
-  const handleSubscribe = async (priceId: string | null) => {
-    if (!priceId) {
+  const handleSubscribe = async (planKey: PlanKey) => {
+    if (planKey === 'free') {
       navigate('/dashboard');
       return;
     }
@@ -90,7 +78,7 @@ export default function Pricing() {
     }
 
     try {
-      await createCheckoutSession(priceId);
+      await createCheckoutSession(planKey);
     } catch (error) {
       console.error('Error creating checkout:', error);
       toast.error(i18n.language === 'ar'
@@ -191,15 +179,15 @@ export default function Pricing() {
                 </div>
 
                 <button
-                  onClick={() => handleSubscribe(plan.priceId)}
-                  disabled={loading || (plan.priceId && currentPlan === plan.key)}
+                  onClick={() => handleSubscribe(plan.key)}
+                  disabled={loading || (plan.key !== 'free' && currentPlan === plan.key)}
                   className={cn(
                     "w-full mb-6 flex items-center justify-center gap-2",
                     plan.ctaVariant === "primary" ? "prago-btn-primary" : "prago-btn-secondary",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                 >
-                  {loading && plan.priceId && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {loading && plan.key !== 'free' && <Loader2 className="w-4 h-4 animate-spin" />}
                   {currentPlan === plan.key ? t('pricing.currentPlan') : t(`pricing.${plan.ctaKey}`)}
                 </button>
 

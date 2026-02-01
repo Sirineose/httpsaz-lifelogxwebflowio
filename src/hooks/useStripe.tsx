@@ -52,17 +52,17 @@ export function useStripe() {
     fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
 
-  const createCheckoutSession = async (priceId: string) => {
+  const createCheckoutSession = async (plan: 'essential' | 'pro' | 'ultimate') => {
     if (!user) {
       throw new Error('User must be logged in to subscribe');
     }
 
     setLoading(true);
     try {
-      // Server uses authenticated user - no need to send userId/email
+      // Server uses authenticated user and maps plan to actual price ID from secrets
       const { data, error } = await supabase.functions.invoke('stripe-checkout/create-checkout', {
         body: {
-          priceId,
+          plan,
           successUrl: `${window.location.origin}/dashboard?success=true`,
           cancelUrl: `${window.location.origin}/pricing?canceled=true`,
         },
