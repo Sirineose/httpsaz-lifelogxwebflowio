@@ -192,8 +192,8 @@ Deno.serve(async (req) => {
             quantity: 1,
           },
         ],
-        success_url: successUrlValidation.value || `${req.headers.get("origin")}/dashboard?success=true`,
-        cancel_url: cancelUrlValidation.value || `${req.headers.get("origin")}/pricing?canceled=true`,
+        success_url: successUrlValidation.value || `${req.headers.get("origin") || "https://prago-dev.lovable.app"}/dashboard?success=true`,
+        cancel_url: cancelUrlValidation.value || `${req.headers.get("origin") || "https://prago-dev.lovable.app"}/pricing?canceled=true`,
         metadata: {
           user_id: userId,
         },
