@@ -41,6 +41,13 @@ const PRICE_IDS: Record<string, string | undefined> = {
   ultimate: Deno.env.get("STRIPE_PRICE_ULTIMATE_MONTHLY"),
 };
 
+// Log secrets at startup (truncated for security)
+console.log("Loaded Price IDs:", {
+  essential: PRICE_IDS.essential ? PRICE_IDS.essential.slice(0, 15) + "..." : "NOT SET",
+  pro: PRICE_IDS.pro ? PRICE_IDS.pro.slice(0, 15) + "..." : "NOT SET",
+  ultimate: PRICE_IDS.ultimate ? PRICE_IDS.ultimate.slice(0, 15) + "..." : "NOT SET",
+});
+
 // Allowed fields per route
 const ALLOWED_FIELDS_CHECKOUT = ["plan", "successUrl", "cancelUrl"];
 const ALLOWED_FIELDS_PORTAL = ["returnUrl"];
