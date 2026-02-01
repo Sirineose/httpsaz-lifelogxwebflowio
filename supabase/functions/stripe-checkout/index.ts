@@ -34,15 +34,15 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-// Price IDs - configured via environment
-const PRICE_IDS = {
-  essential_monthly: Deno.env.get("STRIPE_PRICE_ESSENTIAL_MONTHLY") || "price_essential_monthly",
-  pro_monthly: Deno.env.get("STRIPE_PRICE_PRO_MONTHLY") || "price_pro_monthly",
-  ultimate_monthly: Deno.env.get("STRIPE_PRICE_ULTIMATE_MONTHLY") || "price_ultimate_monthly",
+// Price IDs - configured via environment (NO fallbacks to avoid using placeholder IDs)
+const PRICE_IDS: Record<string, string | undefined> = {
+  essential: Deno.env.get("STRIPE_PRICE_ESSENTIAL_MONTHLY"),
+  pro: Deno.env.get("STRIPE_PRICE_PRO_MONTHLY"),
+  ultimate: Deno.env.get("STRIPE_PRICE_ULTIMATE_MONTHLY"),
 };
 
 // Allowed fields per route
-const ALLOWED_FIELDS_CHECKOUT = ["priceId", "successUrl", "cancelUrl"];
+const ALLOWED_FIELDS_CHECKOUT = ["plan", "successUrl", "cancelUrl"];
 const ALLOWED_FIELDS_PORTAL = ["returnUrl"];
 const ALLOWED_FIELDS_STATUS: string[] = [];
 
@@ -130,12 +130,24 @@ Deno.serve(async (req) => {
       const unexpectedError = rejectUnexpectedFields(body!, ALLOWED_FIELDS_CHECKOUT, corsHeaders);
       if (unexpectedError) return unexpectedError;
 
-      const { priceId, successUrl, cancelUrl } = body as Record<string, unknown>;
+      const { plan, successUrl, cancelUrl } = body as Record<string, unknown>;
 
-      // Validate priceId
-      const priceValidation = sanitizeString(priceId, 100, "priceId", { required: true });
-      if (priceValidation.error) {
-        return errorResponse(400, priceValidation.error, corsHeaders);
+      // Validate plan name
+      const planValidation = sanitizeString(plan, 20, "plan", { required: true });
+      if (planValidation.error) {
+        return errorResponse(400, planValidation.error, corsHeaders);
+      }
+
+      const planName = planValidation.value as string;
+      if (!["essential", "pro", "ultimate"].includes(planName)) {
+        return errorResponse(400, "Plan invalide", corsHeaders);
+      }
+
+      // Get actual price ID from environment
+      const priceId = PRICE_IDS[planName];
+      if (!priceId) {
+        console.error(`Price ID not configured for plan: ${planName}`);
+        return errorResponse(500, "Configuration de prix manquante", corsHeaders);
       }
 
       // Validate URLs
@@ -153,7 +165,7 @@ Deno.serve(async (req) => {
       const email = user.email;
       const userId = user.id;
 
-      console.log("Creating checkout session for authenticated user:", { priceId: priceValidation.value, userId });
+      console.log("Creating checkout session for authenticated user:", { plan: planName, priceId, userId });
 
       // Check if customer already exists
       let customerId: string | undefined;
@@ -169,7 +181,7 @@ Deno.serve(async (req) => {
         mode: "subscription",
         line_items: [
           {
-            price: priceValidation.value!,
+            price: priceId,
             quantity: 1,
           },
         ],
@@ -266,11 +278,11 @@ Deno.serve(async (req) => {
       const priceId = subscription.items.data[0]?.price.id;
 
       let plan = "free";
-      if (priceId === PRICE_IDS.essential_monthly) {
+      if (priceId === PRICE_IDS.essential) {
         plan = "essential";
-      } else if (priceId === PRICE_IDS.pro_monthly) {
+      } else if (priceId === PRICE_IDS.pro) {
         plan = "pro";
-      } else if (priceId === PRICE_IDS.ultimate_monthly) {
+      } else if (priceId === PRICE_IDS.ultimate) {
         plan = "ultimate";
       }
 
