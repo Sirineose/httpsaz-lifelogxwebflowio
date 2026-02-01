@@ -33,7 +33,7 @@ const plans: Plan[] = [
     price: "99",
     icon: Star,
     popular: false,
-    ctaKey: "freeTrial",
+    ctaKey: "subscribe",
     ctaVariant: "secondary",
   },
   {
@@ -41,7 +41,7 @@ const plans: Plan[] = [
     price: "120",
     icon: Sparkles,
     popular: true,
-    ctaKey: "freeTrial",
+    ctaKey: "subscribe",
     ctaVariant: "primary",
   },
   {
@@ -89,7 +89,7 @@ export default function Pricing() {
     }
   };
 
-  const faqKeys = ['changePlan', 'commitment', 'trial'] as const;
+  const faqKeys = ['changePlan', 'commitment'] as const;
 
   return (
     <div className={cn("min-h-screen bg-background", isRTL && "rtl")}>

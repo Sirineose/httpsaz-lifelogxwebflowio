@@ -73,7 +73,7 @@
     "currentPlan": "Plan actuel",
     "perMonth": "/mois",
     "startFree": "Commencer gratuitement",
-    "freeTrial": "Essai gratuit 7 jours",
+    "subscribe": "S'abonner",
     "upgrade": "Passer à ce plan",
     "faq": "Questions fréquentes",
     "moreFaq": "Besoin de plus d'infos ?",
@@ -146,10 +146,6 @@
       "commitment": {
         "question": "Y a-t-il un engagement ?",
         "answer": "Non, tous nos plans sont sans engagement. Vous pouvez annuler à tout moment."
-      },
-      "trial": {
-        "question": "Comment fonctionne l'essai gratuit ?",
-        "answer": "L'essai Pro de 7 jours vous donne accès à toutes les fonctionnalités. Aucune carte requise."
       }
     }
   },
