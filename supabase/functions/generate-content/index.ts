@@ -144,14 +144,14 @@ async function extractTextFromImage(imageBase64: string, apiKey: string): Promis
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash-lite",
+      model: "google/gemini-3-flash-preview",
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Extrais tout le texte visible dans cette image. Retourne uniquement le texte brut, sans commentaire ni explication. Si c'est un document de cours, un exercice ou des notes, retourne le contenu tel quel.",
+              text: "Extrais rapidement le texte visible. Retourne uniquement le texte brut.",
             },
             {
               type: "image_url",
@@ -160,6 +160,7 @@ async function extractTextFromImage(imageBase64: string, apiKey: string): Promis
           ],
         },
       ],
+      max_tokens: 2000,
     }),
   });
 
@@ -371,13 +372,13 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: prompt.system },
           { role: "user", content: prompt.user(extractedText) },
         ],
-        max_tokens: 4000,
-        temperature: 0.5,
+        max_tokens: 3000,
+        temperature: 0.4,
       }),
     });
 
