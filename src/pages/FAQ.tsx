@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, Search, MessageCircle, CreditCard, Shield, BookOpen, Zap, Lock, Server, Eye, FileCheck, Users, Globe, Heart, Wallet, Database, Cloud, CheckCircle2, Star, TrendingUp, GraduationCap } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import pragoRobotMascot from "@/assets/prago-robot-mascot.png";
 import { useState } from "react";
 import {
   Accordion,
@@ -208,13 +209,6 @@ const aiSecurityInfo = [
   },
 ];
 
-const socialProof = [
-  { number: "10,000+", label: "Étudiants actifs" },
-  { number: "98%", label: "Satisfaits" },
-  { number: "4.9/5", label: "Note moyenne" },
-  { number: "0", label: "Incidents sécurité" },
-];
-
 export default function FAQ() {
   const [activeCategory, setActiveCategory] = useState("general");
   const [searchQuery, setSearchQuery] = useState("");
@@ -278,19 +272,26 @@ export default function FAQ() {
           </div>
         </motion.div>
 
-        {/* Social Proof */}
+        {/* Robot Mascot */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
+          className="flex justify-center mb-12"
         >
-          {socialProof.map((item) => (
-            <div key={item.label} className="prago-card p-4 text-center">
-              <p className="text-2xl font-bold text-primary">{item.number}</p>
-              <p className="text-sm text-muted-foreground">{item.label}</p>
-            </div>
-          ))}
+          <motion.img 
+            src={pragoRobotMascot} 
+            alt="PRAGO - Ton assistant IA pédagogique" 
+            className="w-full max-w-xs rounded-3xl shadow-prago-lg"
+            animate={{ 
+              y: [0, -12, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
         </motion.div>
 
         <Tabs defaultValue="faq" className="space-y-8">
