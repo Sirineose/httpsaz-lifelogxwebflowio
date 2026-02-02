@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Play, Sparkles, BookOpen, Brain, Zap, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles, BookOpen, Brain, Zap, CheckCircle2 } from "lucide-react";
+import pragoRobotMascot from "@/assets/prago-robot-mascot.png";
 import { Link } from "react-router-dom";
 
 const features = [
@@ -126,8 +127,8 @@ export default function Landing() {
                 href="#demo"
                 className="prago-btn-secondary flex items-center gap-2 w-full sm:w-auto justify-center"
               >
-                <Play className="w-4 h-4" />
-                Voir la démo
+                <Sparkles className="w-4 h-4" />
+                Voir l'assistant
               </a>
             </motion.div>
 
@@ -193,7 +194,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Video Demo */}
+      {/* Meet PRAGO */}
       <section id="demo" className="py-20 lg:py-32">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
@@ -204,16 +205,16 @@ export default function Landing() {
                 viewport={{ once: true }}
                 className="font-display text-3xl md:text-4xl font-bold mb-4"
               >
-                Découvre PRAGO en action
+                Rencontre ton assistant IA
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="text-muted-foreground"
+                className="text-muted-foreground max-w-xl mx-auto"
               >
-                Une démonstration de notre plateforme d'apprentissage IA
+                PRAGO est là pour t'accompagner 24h/24, répondre à tes questions et t'aider à progresser à ton rythme.
               </motion.p>
             </div>
 
@@ -221,16 +222,13 @@ export default function Landing() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="relative aspect-video rounded-2xl overflow-hidden prago-gradient-border"
+              className="relative flex justify-center"
             >
-              <div className="absolute inset-[1px] rounded-2xl bg-card flex items-center justify-center">
-                <div className="text-center">
-                  <button className="w-20 h-20 rounded-full prago-gradient-bg flex items-center justify-center mx-auto mb-4 hover:scale-105 transition-transform shadow-prago-lg">
-                    <Play className="w-8 h-8 text-white ml-1" />
-                  </button>
-                  <p className="text-muted-foreground text-sm">Cliquer pour lancer la vidéo</p>
-                </div>
-              </div>
+              <img 
+                src={pragoRobotMascot} 
+                alt="PRAGO - Ton assistant IA pédagogique" 
+                className="w-full max-w-md rounded-3xl shadow-prago-lg"
+              />
             </motion.div>
           </div>
         </div>
