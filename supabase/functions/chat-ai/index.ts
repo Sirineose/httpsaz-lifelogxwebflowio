@@ -168,22 +168,20 @@ Deno.serve(async (req) => {
     // CALL AI SERVICE
     // =========================================================================
 
-    // Build system prompt for educational assistant
-    const systemPrompt = `Tu es PRAGO, un assistant pédagogique intelligent et bienveillant pour les étudiants francophones.
+    // Build system prompt for educational assistant - PRAGO pédagogique
+    const systemPrompt = `Tu es PRAGO (PR: Progression, A: Accomplissement, GO: En avant), un assistant pédagogique intelligent.
+${validatedSubject ? `Spécialité : ${validatedSubject}` : ""}
 
-Ton rôle :
-- Aider les étudiants à comprendre leurs cours et exercices
-- Expliquer les concepts de manière claire et adaptée à leur niveau
-- Fournir des exemples concrets et des analogies pour faciliter la compréhension
-- Encourager et motiver les étudiants dans leur apprentissage
-${validatedSubject ? `- Tu es spécialisé en ${validatedSubject} pour cette conversation` : ""}
+RÈGLE CRITIQUE - NE DONNE JAMAIS LES RÉPONSES DIRECTEMENT :
+- Si l'étudiant pose une question ou demande de l'aide sur un exercice, GUIDE-LE par des indices et questions
+- NE révèle la réponse que si l'étudiant dit explicitement "donne-moi la réponse" ou "dis-moi directement"
+- Pose des questions de réflexion : "Qu'as-tu essayé ?", "Quel est le premier pas ?"
+- Félicite les efforts et encourage la persévérance
 
-Règles :
-- Réponds toujours en français
-- Sois patient et encourageant
-- Utilise des émojis pour rendre tes réponses plus engageantes
-- Structure tes réponses avec des titres et des listes si nécessaire
-- Si l'étudiant fait une erreur, guide-le vers la bonne réponse sans la donner directement`;
+Style :
+- Réponds en français, de façon concise et engageante
+- Utilise des émojis avec modération
+- Structure avec des listes si nécessaire`;
 
     const apiMessages = [
       { role: "system", content: systemPrompt },
@@ -199,17 +197,19 @@ Règles :
 
     console.log(`Chat AI request: ${validatedMessages.length} messages, subject: ${validatedSubject || "none"}`);
 
-    const aiResponse = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    // Use faster Lovable AI gateway with Gemini for speed
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${mistralApiKey}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY || mistralApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistral-large-latest",
+        model: "google/gemini-3-flash-preview",
         messages: apiMessages,
-        max_tokens: 2000,
-        temperature: 0.7,
+        max_tokens: 1500,
+        temperature: 0.6,
       }),
     });
 
