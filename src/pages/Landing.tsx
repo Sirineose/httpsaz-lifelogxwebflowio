@@ -224,10 +224,18 @@ export default function Landing() {
               viewport={{ once: true }}
               className="relative flex justify-center"
             >
-              <img 
+              <motion.img 
                 src={pragoRobotMascot} 
                 alt="PRAGO - Ton assistant IA pédagogique" 
                 className="w-full max-w-md rounded-3xl shadow-prago-lg"
+                animate={{ 
+                  y: [0, -12, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
               />
             </motion.div>
           </div>
