@@ -87,14 +87,14 @@
         "name": "Gratuit",
         "description": "Parfait pour découvrir PRAGO",
         "features": [
-          "10 requêtes IA par jour",
+          "5 requêtes IA par jour",
           "Quiz illimités",
           "3 notes max",
           "Accès communauté"
         ],
         "limitations": [
           "Pas de Snap & Solve",
-          "Pas de cours en BD",
+          "3 cours en BD",
           "Support limité"
         ]
       },

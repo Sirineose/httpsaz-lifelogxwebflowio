@@ -87,14 +87,14 @@
         "name": "Free",
         "description": "Perfect to discover PRAGO",
         "features": [
-          "10 AI requests per day",
+          "5 AI requests per day",
           "Unlimited quizzes",
           "3 notes max",
           "Community access"
         ],
         "limitations": [
           "No Snap & Solve",
-          "No comic courses",
+          "3 comic courses",
           "Limited support"
         ]
       },
